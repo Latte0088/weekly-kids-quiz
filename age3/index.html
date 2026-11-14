@@ -235,8 +235,8 @@
     <div class="food-tray" id="foodTray"></div>
     <div class="bento-actions"><button type="button" class="big-btn" id="doneBtn" disabled>✨ できた！</button></div>
     <div class="celebrate" id="celebrate" hidden>
-      <div class="mogu-face">😋</div>
-      <div class="mogu-text">モグモグ… おいしい！</div>
+      <div class="mogu-face" id="moguFace">😋</div>
+      <div class="mogu-text" id="moguText">モグモグ… おいしい！</div>
       <button type="button" class="big-btn" id="againBtn">🔄 もういっかい</button>
     </div>
   </section>
@@ -557,10 +557,10 @@ function finishEating() {
   eatenCells = {};
   Array.prototype.forEach.call(bentoGrid.children, function (c) { c.classList.remove("gulping"); });
   refreshBento();
-  var faceEl = celebrateEl.querySelector(".mogu-face");
+  var faceEl = document.getElementById("moguFace");
   faceEl.className = "hanamaru";
   faceEl.textContent = "💮";
-  celebrateEl.querySelector(".mogu-text").textContent = "ごちそうさま！ ぜんぶ たべたね";
+  document.getElementById("moguText").textContent = "ごちそうさま！ ぜんぶ たべたね";
   celebrateEl.hidden = false;
   sndFanfare();
   confettiBurst(celebrateEl);
