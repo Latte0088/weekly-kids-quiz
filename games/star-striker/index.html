@@ -254,23 +254,19 @@ let gameState = 'TITLE'; // 'TITLE' | 'PLAYING' | 'GAMEOVER'
 // ゲームオーバーでは「九九で復活」か「そのまま再挑戦」を自分で選べる。
 // 九九が「罰」ではなく「ご褒美（パワーアップ）」になるための仕組み。
 // ==========================================
-const POWER_LEVEL_KEY = 'starStrikerPowerLevel';
+const POWER_UP_KEY = 'starStrikerPowerUp';
 
-// 九九チャレンジのクリア回数で貯まるパワーレベル（永続・最大3）
-// Lv1: ツインレーザー / Lv2: 3WAY + アイテムマグネット / Lv3: 強い弾 + シールド開始
-function loadPowerLevel() {
-  try {
-    const v = parseInt(localStorage.getItem(POWER_LEVEL_KEY) || '0', 10);
-    return isNaN(v) ? 0 : Math.max(0, Math.min(3, v));
-  } catch (e) { return 0; }
+// パワーアップは「1ラン消費型」: 九九チャレンジ（10問）をクリアするとフラグが貯まり、
+// 次のラン開始の瞬間に消費されて、その1ランだけ シールド＋3WAY＋マグネット で遊べる。
+// ゲームオーバーで効果は終わり、また九九でチャージしたくなる仕組み。
+function hasChargedPowerUp() {
+  try { return localStorage.getItem(POWER_UP_KEY) === '1'; } catch (e) { return false; }
 }
-let powerLevel = loadPowerLevel();
+// いま遊んでいるランがパワーアップ中かどうか（ゲームオーバー画面の表示にも使う）
+let runPowered = false;
 
 function nextRewardText() {
-  if (powerLevel <= 0) return '⚡ ツインレーザーが てにはいる！';
-  if (powerLevel === 1) return '⚡ 3WAY＋マグネットが てにはいる！';
-  if (powerLevel === 2) return '⚡ つよい たま＋シールドが てにはいる！';
-  return '⚡ パワーレベル MAX！';
+  return '⚡ シールド＋3WAY＋むてきで スタート！';
 }
 
 function goToKukuChallenge() {
@@ -489,12 +485,13 @@ function startGame(touchX, touchY) {
   player.powerTimer = 0;
   player.hasShield = false;
   player.invincibleTimer = 0;
-  // 九九チャレンジで貯めたパワーレベルを反映（Lv3はシールド付きでスタート）
-  powerLevel = loadPowerLevel();
-  if (powerLevel >= 3) player.hasShield = true;
-  if (powerLevel >= 1) {
+  // チャージ済みパワーアップがあれば、このラン開始の瞬間に消費して反映する
+  runPowered = hasChargedPowerUp();
+  if (runPowered) {
+    try { localStorage.removeItem(POWER_UP_KEY); } catch (e) { /* けせなくても すすむ */ }
+    player.hasShield = true;
     player.invincibleTimer = 120;
-    addFloatingText(player.x, Math.max(60, player.y - 44), `POWER Lv${powerLevel}!`, '#ffd21f');
+    addFloatingText(player.x, Math.max(60, player.y - 44), 'パワーアップ スタート！', '#ffd21f');
   }
   isTouching = true;
   playPowerUpSound(false);
@@ -903,10 +900,10 @@ function update() {
     const hoverY = 305 + Math.sin(frameCount * 0.06) * 8;
     drawPlayer(canvas.width / 2, hoverY);
 
-    if (powerLevel > 0) {
+    if (hasChargedPowerUp()) {
       ctx.fillStyle = '#ffd21f';
       ctx.font = 'bold 15px sans-serif';
-      ctx.fillText(`⚡ パワーレベル ${powerLevel}`, canvas.width / 2, 368);
+      ctx.fillText('⚡ パワーアップ じゅんびOK！', canvas.width / 2, 368);
     }
     {
       const pulseScale = 1 + Math.sin(frameCount * 0.1) * 0.03;
@@ -969,26 +966,21 @@ function update() {
 
     if (isTouching && frameCount % 9 === 0) {
       playShootSound();
-      // パワーレベルで弾が段階的に強くなる（Lv1: 2連射 / Lv2: 3WAY / Lv3: 大きくて強い弾）
-      // [P]アイテムは今の基礎パターンを1段階引き上げる（Lv1→3WAY、Lv2以上→5WAY）
-      const bulletR = powerLevel >= 3 ? 6 : 4;
-      const bulletDmg = powerLevel >= 3 ? 2 : 1;
+      // パワーアップ中のランは3WAYが基礎パターンになる
+      // [P]アイテムは基礎パターンを1段階引き上げる（通常→3WAY、パワーアップ中→5WAY）
       const hasP = player.powerTimer > 0;
-      if (hasP && powerLevel >= 2) {
-        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
-        bullets.push({ x: player.x - 10, y: player.y - 16, vx: -1.8, vy: -9.5, r: bulletR, dmg: bulletDmg });
-        bullets.push({ x: player.x + 10, y: player.y - 16, vx: 1.8, vy: -9.5, r: bulletR, dmg: bulletDmg });
-        bullets.push({ x: player.x - 18, y: player.y - 10, vx: -3.6, vy: -9.0, r: bulletR, dmg: bulletDmg });
-        bullets.push({ x: player.x + 18, y: player.y - 10, vx: 3.6, vy: -9.0, r: bulletR, dmg: bulletDmg });
-      } else if (hasP || powerLevel >= 2) {
-        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
-        bullets.push({ x: player.x - 10, y: player.y - 16, vx: -1.8, vy: -9.5, r: bulletR, dmg: bulletDmg });
-        bullets.push({ x: player.x + 10, y: player.y - 16, vx: 1.8, vy: -9.5, r: bulletR, dmg: bulletDmg });
-      } else if (powerLevel === 1) {
-        bullets.push({ x: player.x - 6, y: player.y - 20, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
-        bullets.push({ x: player.x + 6, y: player.y - 20, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
+      if (hasP && runPowered) {
+        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: 4, dmg: 1 });
+        bullets.push({ x: player.x - 10, y: player.y - 16, vx: -1.8, vy: -9.5, r: 4, dmg: 1 });
+        bullets.push({ x: player.x + 10, y: player.y - 16, vx: 1.8, vy: -9.5, r: 4, dmg: 1 });
+        bullets.push({ x: player.x - 18, y: player.y - 10, vx: -3.6, vy: -9.0, r: 4, dmg: 1 });
+        bullets.push({ x: player.x + 18, y: player.y - 10, vx: 3.6, vy: -9.0, r: 4, dmg: 1 });
+      } else if (hasP || runPowered) {
+        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: 4, dmg: 1 });
+        bullets.push({ x: player.x - 10, y: player.y - 16, vx: -1.8, vy: -9.5, r: 4, dmg: 1 });
+        bullets.push({ x: player.x + 10, y: player.y - 16, vx: 1.8, vy: -9.5, r: 4, dmg: 1 });
       } else {
-        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
+        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: 4, dmg: 1 });
       }
     }
 
@@ -1019,7 +1011,7 @@ function update() {
       b.x += b.vx;
       b.y += b.vy;
 
-      ctx.fillStyle = powerLevel >= 3 ? '#ffcc33' : ((player.powerTimer > 0 && powerLevel >= 2) ? '#ff66dd' : ((player.powerTimer > 0 || powerLevel >= 2) ? '#55ff99' : '#00eeff'));
+      ctx.fillStyle = (player.powerTimer > 0 && runPowered) ? '#ff66dd' : ((player.powerTimer > 0 || runPowered) ? '#55ff99' : '#00eeff');
       ctx.beginPath();
       ctx.roundRect(b.x - 2.5, b.y - 7, 5, 14, 2.5);
       ctx.fill();
@@ -1031,8 +1023,8 @@ function update() {
     });
 
     items = items.filter(item => {
-      // パワーレベル2以上: 近くのアイテムが自機に引き寄せられる（マグネット）
-      if (powerLevel >= 2 && gameState === 'PLAYING') {
+      // パワーアップ中のラン: 近くのアイテムが自機に引き寄せられる（マグネット）
+      if (runPowered && gameState === 'PLAYING') {
         const mdx = player.x - item.x;
         const mdy = player.y - item.y;
         const mDist = Math.hypot(mdx, mdy);
@@ -1365,6 +1357,14 @@ function update() {
       ctx.fillText(`ボスを ${bossLevel}たい たおした！`, canvas.width / 2, 376);
     }
     drawChallengeButtons();
+    if (runPowered) {
+      // パワーアップ状態で遊んだランが終わったときだけ、次の挑戦を促す
+      ctx.fillStyle = '#ffd21f';
+      ctx.font = 'bold 13px sans-serif';
+      ctx.fillText('パワーアップ エネルギーが なくなったよ！', canvas.width / 2, 560);
+      ctx.fillStyle = '#fff2b0';
+      ctx.fillText('また 九九で チャージしよう！⚡', canvas.width / 2, 582);
+    }
   }
 
   ctx.restore();
