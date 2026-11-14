@@ -10,6 +10,9 @@ test("トップの年齢分岐から両方の入り口へ進める", async ({ pa
   await page.goto("/grade2/");
   await page.click('a[href="../kuku/"]');
   await expect(page).toHaveURL(/\/kuku\/$/);
+  await page.goto("/grade2/");
+  await page.click('a[href="../calc/"]');
+  await expect(page).toHaveURL(/\/calc\/$/);
   // 3歳側
   await page.goto("/");
   await page.click('a[href="age3/"]');
