@@ -992,6 +992,7 @@ var curColor = COLORS[0].c, curStamp = "star";
 var stampCount = 0, drawingNow = false, lastPt = null, lastSoundAt = 0;
 var particles = [], skyStars = [];
 var launchPhase = "", launchStart = 0, burstStart = 0, launchPower = 0, pendingBursts = [];
+var placedStamps = [], launchStamps = [];
 
 var colorBtnsEl = document.getElementById("colorBtns");
 COLORS.forEach(function (col, i) {
@@ -1048,12 +1049,13 @@ function sizeCanvases() {
 }
 window.addEventListener("resize", function () { if (!views.draw.hidden) sizeCanvases(); });
 
+var SAMPLING = false;
 function drawStampShape(ctx, x, y, size, color, shape) {
   ctx.save();
   ctx.translate(x, y);
   ctx.fillStyle = color;
   ctx.shadowColor = color;
-  ctx.shadowBlur = 14;
+  ctx.shadowBlur = SAMPLING ? 0 : 14;
   var s = size;
   if (shape === "star") {
     ctx.beginPath();
@@ -1245,6 +1247,7 @@ function stampAt(x, y) {
   var fav = ["shinkansen", "panda", "dino", "patcar", "neko", "inu", "usagi", "sakana", "taiyo", "ringo", "banana", "ichigo", "mikan", "sakuranbo", "budou"].indexOf(curStamp) !== -1;
   drawStampShape(artX, x, y, fav ? 24 : 15, curColor, curStamp);
   stampCount++;
+  placedStamps.push({ id: curStamp, color: curColor });
   spawnSparkles(x, y, curColor, 3);
   var now = performance.now();
   if (now - lastSoundAt > 115) { lastSoundAt = now; sndPenta(); }
@@ -1283,6 +1286,8 @@ document.getElementById("launchBtn").addEventListener("click", function () {
   if (launchPhase) return;
   ensureAudio();
   launchPower = stampCount;
+  launchStamps = placedStamps.slice();
+  placedStamps = [];
   launchPhase = "rise";
   launchStart = performance.now();
   sndWhoosh();
@@ -1321,6 +1326,37 @@ function spawnShapeBurst(cx, cy, key, R) {
   var sh = SHAPES[key];
   sh.pts.forEach(function (pt) {
     particles.push({ shape: true, sx: cx, sy: cy, x: cx, y: cy, tx: cx + pt[0] * R, ty: cy + pt[1] * R, born: performance.now(), travel: 420, life: 1, decay: 0.007, size: 3.2, color: sh.color, grav: 0, vx: 0, vy: 0 });
+  });
+}
+/* 貼ったスタンプのシルエットをドット化する（スタンプ描画をオフスクリーンで描いて採取） */
+var stampShapeCache = {};
+function stampPoints(id) {
+  if (stampShapeCache[id]) return stampShapeCache[id];
+  var S = 120, size = S * 0.32;
+  var oc = document.createElement("canvas"); oc.width = S; oc.height = S;
+  var octx = oc.getContext("2d");
+  SAMPLING = true;
+  drawStampShape(octx, S / 2, S / 2, size, "#ffffff", id);
+  SAMPLING = false;
+  var data;
+  try { data = octx.getImageData(0, 0, S, S).data; } catch (e) { return []; }
+  var pts = [], step = 5;
+  for (var gy = 2; gy < S; gy += step) {
+    for (var gx = 2; gx < S; gx += step) {
+      var di = (gy * S + gx) * 4;
+      if (data[di + 3] > 110) {
+        // 目や鼻などの濃い色パーツは白ドットにして、形の特徴を残す
+        var dark = (data[di] < 110 && data[di + 1] < 110 && data[di + 2] < 110) ? 1 : 0;
+        pts.push([(gx - S / 2) / size, (gy - S / 2) / size, dark]);
+      }
+    }
+  }
+  stampShapeCache[id] = pts;
+  return pts;
+}
+function spawnStampBurst(cx, cy, id, color, R) {
+  stampPoints(id).forEach(function (pt) {
+    particles.push({ shape: true, sx: cx, sy: cy, x: cx, y: cy, tx: cx + pt[0] * R, ty: cy + pt[1] * R, born: performance.now(), travel: 420, life: 1, decay: 0.007, size: 3.2, color: pt[2] ? "#ffffff" : color, grav: 0, vx: 0, vy: 0 });
   });
 }
 function fxLoop(ts) {
@@ -1366,8 +1402,19 @@ function fxLoop(ts) {
         pendingBursts.push({ at: ts + o.delay, x: cx + w * o.dx, y: cy + h * o.dy, n: Math.round(pN * 0.8), spd: pSpd });
       }
       if (launchPower >= 30 || Math.random() < 0.55) {
-        var shapeKeys = Object.keys(SHAPES);
-        pendingBursts.push({ at: ts + 430, x: cx, y: cy - h * 0.03, shape: shapeKeys[Math.floor(Math.random() * shapeKeys.length)], R: 85 + Math.min(55, launchPower) });
+        var stampPick = null;
+        if (launchStamps.length) {
+          var distinct = {}, dkeys = [];
+          launchStamps.forEach(function (ps) { if (!distinct[ps.id]) { distinct[ps.id] = ps.color; dkeys.push(ps.id); } });
+          var pickId = dkeys[Math.floor(Math.random() * dkeys.length)];
+          stampPick = { id: pickId, color: distinct[pickId] };
+        }
+        if (stampPick) {
+          pendingBursts.push({ at: ts + 430, x: cx, y: cy - h * 0.03, stamp: stampPick.id, color: stampPick.color, R: 85 + Math.min(55, launchPower) });
+        } else {
+          var shapeKeys = Object.keys(SHAPES);
+          pendingBursts.push({ at: ts + 430, x: cx, y: cy - h * 0.03, shape: shapeKeys[Math.floor(Math.random() * shapeKeys.length)], R: 85 + Math.min(55, launchPower) });
+        }
       }
       artX.clearRect(0, 0, w, h);
       stampCount = 0;
@@ -1381,7 +1428,8 @@ function fxLoop(ts) {
     var remain = [];
     pendingBursts.forEach(function (b) {
       if (ts >= b.at) {
-        if (b.shape) spawnShapeBurst(b.x, b.y, b.shape, b.R);
+        if (b.stamp) spawnStampBurst(b.x, b.y, b.stamp, b.color, b.R);
+        else if (b.shape) spawnShapeBurst(b.x, b.y, b.shape, b.R);
         else spawnBurst(b.x, b.y, b.n, b.spd);
         sndMiniBoom();
       }
