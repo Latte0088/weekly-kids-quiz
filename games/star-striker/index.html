@@ -970,10 +970,17 @@ function update() {
     if (isTouching && frameCount % 9 === 0) {
       playShootSound();
       // パワーレベルで弾が段階的に強くなる（Lv1: 2連射 / Lv2: 3WAY / Lv3: 大きくて強い弾）
+      // [P]アイテムは今の基礎パターンを1段階引き上げる（Lv1→3WAY、Lv2以上→5WAY）
       const bulletR = powerLevel >= 3 ? 6 : 4;
       const bulletDmg = powerLevel >= 3 ? 2 : 1;
-      const threeWay = player.powerTimer > 0 || powerLevel >= 2;
-      if (threeWay) {
+      const hasP = player.powerTimer > 0;
+      if (hasP && powerLevel >= 2) {
+        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
+        bullets.push({ x: player.x - 10, y: player.y - 16, vx: -1.8, vy: -9.5, r: bulletR, dmg: bulletDmg });
+        bullets.push({ x: player.x + 10, y: player.y - 16, vx: 1.8, vy: -9.5, r: bulletR, dmg: bulletDmg });
+        bullets.push({ x: player.x - 18, y: player.y - 10, vx: -3.6, vy: -9.0, r: bulletR, dmg: bulletDmg });
+        bullets.push({ x: player.x + 18, y: player.y - 10, vx: 3.6, vy: -9.0, r: bulletR, dmg: bulletDmg });
+      } else if (hasP || powerLevel >= 2) {
         bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
         bullets.push({ x: player.x - 10, y: player.y - 16, vx: -1.8, vy: -9.5, r: bulletR, dmg: bulletDmg });
         bullets.push({ x: player.x + 10, y: player.y - 16, vx: 1.8, vy: -9.5, r: bulletR, dmg: bulletDmg });
@@ -1012,7 +1019,7 @@ function update() {
       b.x += b.vx;
       b.y += b.vy;
 
-      ctx.fillStyle = powerLevel >= 3 ? '#ffcc33' : ((player.powerTimer > 0 || powerLevel >= 2) ? '#55ff99' : '#00eeff');
+      ctx.fillStyle = powerLevel >= 3 ? '#ffcc33' : ((player.powerTimer > 0 && powerLevel >= 2) ? '#ff66dd' : ((player.powerTimer > 0 || powerLevel >= 2) ? '#55ff99' : '#00eeff'));
       ctx.beginPath();
       ctx.roundRect(b.x - 2.5, b.y - 7, 5, 14, 2.5);
       ctx.fill();
