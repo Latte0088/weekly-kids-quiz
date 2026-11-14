@@ -29,8 +29,13 @@ test("ゲート: ゲームオーバー→ボタンで九九へ→クリアで解
   await expect(page).toHaveURL(/\/kuku\/\?gate=star-striker$/);
   await expect(page.locator("#gateBanner")).toBeVisible();
 
+  // ゲート時はおすすめ（記録なし→1のだん・10もん）が自動選択され、段・問題数は変更できない
+  await expect(page.locator("#danGrid button").first()).toBeDisabled();
+  await expect(page.locator("#danMix")).toBeDisabled();
+
   // 九九を10問クリアする（式を読んでテンキーで答える）
   await page.click("#startBtn");
+  await expect(page.locator("#qDan")).toHaveText("1のだん");
   for (let i = 0; i < 10; i++) {
     await expect(page.locator("#view-game")).toBeVisible();
     const a = parseInt(await page.locator("#qA").textContent(), 10);
