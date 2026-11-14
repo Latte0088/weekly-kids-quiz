@@ -134,7 +134,7 @@
   .cell-food { display: inline-flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
   .cell-food.fx-bounce { animation: food-bounce .55s cubic-bezier(.34,1.56,.64,1); }
   @keyframes food-bounce { 0% { transform: scale(.4,1.5); } 35% { transform: scale(1.25,.72); } 60% { transform: scale(.9,1.12); } 100% { transform: scale(1,1); } }
-  .cell-food.gulp { animation: gulp .3s ease-in forwards; }
+  .bento-cell.gulping .cell-food { animation: gulp .32s ease-in forwards; }
   @keyframes gulp { to { transform: scale(.1) rotate(24deg); opacity: 0; } }
   .steam { position: absolute; bottom: 58%; width: 11px; height: 11px; border-radius: 50%; background: rgba(255,255,255,.9); filter: blur(2.5px); pointer-events: none; animation: steam-up 1.05s ease-out forwards; }
   @keyframes steam-up { to { transform: translateY(-46px) scale(2.1); opacity: 0; } }
@@ -452,7 +452,8 @@ for (var ci0 = 0; ci0 < 6; ci0++) {
     var cell = document.createElement("div");
     cell.className = "bento-cell";
     cell.setAttribute("role", "button");
-    cell.addEventListener("click", function () { if (eating) eatFood(ci); else removeFood(ci); });
+    cell.addEventListener("click", function () { if (!eating) removeFood(ci); });
+    cell.addEventListener("pointerdown", function () { if (eating) eatFood(ci); });
     bentoGrid.appendChild(cell);
     bentoCells.push(null);
   })(ci0);
@@ -510,7 +511,7 @@ function confettiBurst(container) {
     (function (el) { setTimeout(function () { el.remove(); }, 4200); })(p);
   }
 }
-var eating = false, foodsToEat = 0, eatenCount = 0;
+var eating = false, foodsToEat = 0, eatenCount = 0, eatenCells = {};
 var eatBanner = document.getElementById("eatBanner");
 var eatFace = document.getElementById("eatFace");
 var bentoActionsEl = document.querySelector(".bento-actions");
@@ -524,6 +525,7 @@ doneBtn.addEventListener("click", function () {
   eating = true;
   foodsToEat = placedCount;
   eatenCount = 0;
+  eatenCells = {};
   ensureAudio();
   [523, 659, 784].forEach(function (f, i) { tone(f, i * .09, .2, "triangle", .4); });
   foodTray.classList.add("disabled");
@@ -531,28 +533,30 @@ doneBtn.addEventListener("click", function () {
   eatBanner.hidden = false;
 });
 function eatFood(ci) {
-  if (!eating || bentoCells[ci] === null) return;
-  var cell = bentoGrid.children[ci];
-  var span = cell.querySelector(".cell-food");
-  if (span && span.classList.contains("gulp")) return;
+  if (!eating || bentoCells[ci] === null || eatenCells[ci]) return;
+  eatenCells[ci] = true;
   ensureAudio();
   sndChomp();
   eatFace.textContent = "😆";
+  eatFace.classList.remove("chewing");
+  void eatFace.offsetWidth;
   eatFace.classList.add("chewing");
-  if (span) span.classList.add("gulp");
+  bentoGrid.children[ci].classList.add("gulping");
+  eatenCount++;
   setTimeout(function () {
-    bentoCells[ci] = null;
-    placedCount--;
-    refreshBento();
-    eatFace.textContent = "😋";
-    eatFace.classList.remove("chewing");
-    eatenCount++;
-    if (eatenCount >= foodsToEat) setTimeout(finishEating, 450);
-  }, 300);
+    if (eating) { eatFace.textContent = "😋"; eatFace.classList.remove("chewing"); }
+  }, 380);
+  if (eatenCount >= foodsToEat) setTimeout(finishEating, 620);
 }
 function finishEating() {
+  if (!eating) return;
   eating = false;
   eatBanner.hidden = true;
+  bentoCells = bentoCells.map(function () { return null; });
+  placedCount = 0;
+  eatenCells = {};
+  Array.prototype.forEach.call(bentoGrid.children, function (c) { c.classList.remove("gulping"); });
+  refreshBento();
   var faceEl = celebrateEl.querySelector(".mogu-face");
   faceEl.className = "hanamaru";
   faceEl.textContent = "💮";
