@@ -249,6 +249,58 @@ function playWarningSound() {
 // ==========================================
 let gameState = 'TITLE'; // 'TITLE' | 'PLAYING' | 'GAMEOVER'
 
+// ==========================================
+// 九九ゲート（ゲームオーバーでロック → 九九クリアで解除）
+// ==========================================
+const KUKU_LOCK_KEY = 'starStrikerKukuLock';
+let lockMemory = false;
+
+function isKukuLocked() {
+  try { return lockMemory || localStorage.getItem(KUKU_LOCK_KEY) === '1'; }
+  catch (e) { return lockMemory; }
+}
+
+function setKukuLock() {
+  lockMemory = true;
+  try { localStorage.setItem(KUKU_LOCK_KEY, '1'); } catch (e) { /* 保存できなくても、この画面ではロックする */ }
+}
+
+function goToKuku() {
+  location.href = '../../kuku/?gate=star-striker';
+}
+
+function kukuBtnRect() {
+  return gameState === 'GAMEOVER'
+    ? { x: 45, y: 424, w: 270, h: 54 }
+    : { x: 45, y: 388, w: 270, h: 54 };
+}
+
+function isInsideKukuButton(x, y) {
+  const r = kukuBtnRect();
+  return x >= r.x - 6 && x <= r.x + r.w + 6 && y >= r.y - 6 && y <= r.y + r.h + 6;
+}
+
+function drawKukuButton() {
+  const r = kukuBtnRect();
+  const pulseScale = 1 + Math.sin(frameCount * 0.1) * 0.03;
+  ctx.save();
+  ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
+  ctx.scale(pulseScale, pulseScale);
+  const g = ctx.createLinearGradient(-r.w / 2, -r.h / 2, r.w / 2, r.h / 2);
+  g.addColorStop(0, '#ff8a1e');
+  g.addColorStop(1, '#ffd21f');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.roundRect(-r.w / 2, -r.h / 2, r.w, r.h, 27);
+  ctx.fill();
+  ctx.fillStyle = '#241300';
+  ctx.font = 'bold 20px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('✖️ 九九に いく ▶', 0, 1);
+  ctx.restore();
+}
+
 let score = 0;
 let highScore = Number(localStorage.getItem('starStrikerBest')) || 0;
 let frameCount = 0;
@@ -340,7 +392,17 @@ function handleStart(x, y) {
 
   initAudio();
 
-  if (gameState === 'TITLE' || gameState === 'GAMEOVER') {
+  if (gameState === 'GAMEOVER') {
+    // ゲームオーバー後は九九クリアまで再開できない。ボタンで九九へ遷移する
+    if (isInsideKukuButton(x, y)) goToKuku();
+    return;
+  }
+
+  if (gameState === 'TITLE') {
+    if (isKukuLocked()) {
+      if (isInsideKukuButton(x, y)) goToKuku();
+      return;
+    }
     startGame(x, y);
     return;
   }
@@ -459,6 +521,7 @@ function damagePlayer() {
     addFloatingText(player.x, player.y - 25, 'GUARD!', '#44ccff');
   } else {
     gameState = 'GAMEOVER';
+    setKukuLock();
     isTouching = false;
     playExplosionSound(true);
     createExplosion(player.x, player.y, '#44aaff', 36, 1.5);
@@ -780,24 +843,31 @@ function update() {
     const hoverY = 305 + Math.sin(frameCount * 0.06) * 8;
     drawPlayer(canvas.width / 2, hoverY);
 
-    const pulseScale = 1 + Math.sin(frameCount * 0.1) * 0.03;
-    ctx.save();
-    ctx.translate(canvas.width / 2, 415);
-    ctx.scale(pulseScale, pulseScale);
+    if (isKukuLocked()) {
+      ctx.fillStyle = '#ffcc00';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillText('九九を クリアすると また あそべるよ', canvas.width / 2, 368);
+      drawKukuButton();
+    } else {
+      const pulseScale = 1 + Math.sin(frameCount * 0.1) * 0.03;
+      ctx.save();
+      ctx.translate(canvas.width / 2, 415);
+      ctx.scale(pulseScale, pulseScale);
 
-    const btnGrad = ctx.createLinearGradient(-110, -24, 110, 24);
-    btnGrad.addColorStop(0, '#0088ff');
-    btnGrad.addColorStop(1, '#00ddaa');
-    ctx.fillStyle = btnGrad;
-    ctx.beginPath();
-    ctx.roundRect(-110, -24, 220, 48, 24);
-    ctx.fill();
+      const btnGrad = ctx.createLinearGradient(-110, -24, 110, 24);
+      btnGrad.addColorStop(0, '#0088ff');
+      btnGrad.addColorStop(1, '#00ddaa');
+      ctx.fillStyle = btnGrad;
+      ctx.beginPath();
+      ctx.roundRect(-110, -24, 220, 48, 24);
+      ctx.fill();
 
-    ctx.fillStyle = '#040812';
-    ctx.font = 'bold 20px sans-serif';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('TAP TO START', 0, 1);
-    ctx.restore();
+      ctx.fillStyle = '#040812';
+      ctx.font = 'bold 20px sans-serif';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('TAP TO START', 0, 1);
+      ctx.restore();
+    }
 
     ctx.fillStyle = '#99b0cc';
     ctx.font = '13px sans-serif';
@@ -1177,9 +1247,10 @@ function update() {
     ctx.fillStyle = '#ffcc00';
     ctx.font = '16px sans-serif';
     ctx.fillText(`BEST SCORE: ${highScore}`, canvas.width / 2, 345);
-    ctx.fillStyle = '#00ffcc';
-    ctx.font = 'bold 18px sans-serif';
-    ctx.fillText('タップしてリスタート', canvas.width / 2, 405);
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText('九九を クリアすると また あそべるよ', canvas.width / 2, 398);
+    drawKukuButton();
   }
 
   ctx.restore();

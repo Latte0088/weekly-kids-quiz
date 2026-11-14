@@ -125,6 +125,18 @@
         width: 100%; margin-top: 12px; min-height: 60px; border: none; border-radius: 999px;
         background: var(--key); color: var(--ink); font-size: 1.15rem; font-weight: 800;
       }
+      .gate-banner {
+        background: #fff3cf; color: #6b5200; border: 2px solid var(--yellow);
+        border-radius: 16px; padding: 12px 14px; font-weight: 800; text-align: center;
+        margin: 0 0 14px; font-size: 1.02rem;
+      }
+      .game-btn {
+        display: flex; align-items: center; justify-content: center;
+        width: 100%; margin-top: 12px; min-height: 68px; border-radius: 999px;
+        background: var(--orange); color: #fff; font-size: 1.35rem; font-weight: 800;
+        text-decoration: none; box-shadow: 0 6px 0 #c25e00;
+      }
+      .game-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c25e00; }
         #view-game { position: relative; }
     .judge-fx {
       position: absolute; left: calc(50% - 105px); top: calc(50% - 105px); z-index: 30; pointer-events: none;
@@ -156,6 +168,7 @@
         </div>
         <h1 class="title"><ruby>九九<rt>くく</rt></ruby>スピードアタック</h1>
         <p class="tagline">はやく ただしく とけ！ たくさん とくほど つよいぞ！</p>
+        <p class="gate-banner" id="gateBanner" hidden>🎮 ゲームで あそぶには 九九を クリアしてね！<br />10もん か 20もんを さいごまで とくと クリアだよ（エンドレスは クリアに ならないよ）</p>
 
         <section class="panel">
           <div class="sec-head">
@@ -232,6 +245,7 @@
           <div><span class="record-badge" id="recordBadge" hidden>🏆 NEW RECORD!</span></div>
           <button class="again-btn" id="againBtn" type="button">もういちど！</button>
           <button class="reselect-btn" id="reselectBtn" type="button">だんを えらびなおす</button>
+          <a class="game-btn" id="toGameBtn" href="../games/star-striker/" hidden>🎮 ゲームに もどる</a>
         </section>
       </main>
 
@@ -239,6 +253,17 @@
 
     <script>
       "use strict";
+
+      /* ---------- STAR STRIKER の九九ゲート ---------- */
+      var GATE_KEY = "starStrikerKukuLock";
+      var gateMode = false;
+      try {
+        gateMode = localStorage.getItem(GATE_KEY) === "1" ||
+          new URLSearchParams(location.search).get("gate") === "star-striker";
+      } catch (e) { /* よめなくても ふつうに あそべる */ }
+      if (gateMode) {
+        document.getElementById("gateBanner").hidden = false;
+      }
 
       /* ---------- 設定 ---------- */
       var dan = 0;            // 0 = ミックス, 1-9 = だん
@@ -425,6 +450,11 @@
         document.getElementById("rPer").textContent = (total / count).toFixed(2);
         document.getElementById("rBest").textContent = best.toFixed(1);
         document.getElementById("recordBadge").hidden = !isRecord;
+        if (gateMode) {
+          // クリアで STAR STRIKER のロックを解除し、ゲームへ戻るボタンを出す
+          try { localStorage.removeItem(GATE_KEY); } catch (e) { /* けせなくても ボタンは だす */ }
+          document.getElementById("toGameBtn").hidden = false;
+        }
         viewGame.hidden = true;
         viewResult.hidden = false;
         soundClear();

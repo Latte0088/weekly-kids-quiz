@@ -9,6 +9,7 @@
 - `index.html` — トップページ（「7さい」「3さい」「ゲーム」のドアカード）
 - `games/index.html` — ゲームの入り口ページ（ゲームのドアカード一覧）
 - `games/star-striker/index.html` — STAR STRIKER（宇宙シューティング。単一ファイル、Canvas＋Web Audio。ドラッグ／マウスで移動、タッチ中オートショット、コンボ・パワーアップ・ボス戦、ハイスコアは localStorage 保存）
+- 九九ゲート — STAR STRIKER でゲームオーバーになるとロックされ（localStorage `starStrikerKukuLock`）、ゲームオーバー画面とロック中のタイトル画面に「九九にいく」ボタンが出て九九（`kuku/?gate=star-striker`）へ遷移する。九九を10問／20問最後まで解くと（エンドレスは対象外）ロックが解除され、結果画面に「ゲームにもどる」ボタンが出る
 - `grade2/index.html` — 7歳（小学2年生）向け入り口ページ（「クイズ」と「九九」のドアカード）
 - `age3/index.html` — 3歳向けアプリ（単一ファイルSPA：選択ハブ＋おべんとうづくり／どうぶつかくれんぼ／キラキラはなび。外部アセットなし、音はWeb Audio合成）
 - `quiz/index.html` — クイズの目次ページ（最新ボタン・ランダムボタン・あそびかた・回の一覧）
