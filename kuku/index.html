@@ -336,6 +336,7 @@
       var qIndex = 0;         // いまの もんだい (1はじまり)
       var streak = 0;
       var cur = { a: 0, b: 0, ans: 0 };
+      var prev = null;        // ひとつ前の もんだい（連続出題を避ける）
       var input = "";
       var startAt = 0;
       var timerId = null;
@@ -351,8 +352,13 @@
       function rand19() { return 1 + Math.floor(Math.random() * 9); }
 
       function nextQuestion() {
-        var a = dan === 0 ? rand19() : dan;
-        var b = rand19();
+        var a, b, guard = 0;
+        do {
+          a = dan === 0 ? rand19() : dan;
+          b = rand19();
+          guard++;
+        } while (prev && a === prev.a && b === prev.b && guard < 20);
+        prev = { a: a, b: b };
         cur = { a: a, b: b, ans: a * b };
         input = "";
         qDan.textContent = dan === 0 ? "ミックス" : dan + "のだん";
@@ -379,6 +385,7 @@
       function startGame() {
         qIndex = 1;
         streak = 0;
+        prev = null;
         viewStart.hidden = true;
         viewResult.hidden = true;
         viewGame.hidden = false;
@@ -426,6 +433,7 @@
 
       function pushDigit(dgt) {
         if (viewGame.hidden) return;
+        if (input === "" && dgt === "0") return;
         if (input.length >= String(cur.ans).length) return;
         input += dgt;
         qAns.textContent = input;
@@ -437,10 +445,12 @@
         if (!btn) return;
         var dgt = btn.getAttribute("data-digit");
         if (dgt !== null) pushDigit(dgt);
+        btn.blur();
       });
       document.getElementById("clearBtn").addEventListener("click", function () {
         input = "";
         qAns.textContent = "?";
+        this.blur();
       });
       document.addEventListener("keydown", function (e) {
         if (viewGame.hidden) return;
