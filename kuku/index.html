@@ -231,7 +231,7 @@
             <button class="pick-btn" data-count="endless" type="button">エンドレス</button>
           </div>
 
-          <p class="challenge-info" id="challengeInfo" hidden>もんだいは 10もん。タイマーは ないから あせらなくて だいじょうぶ。<br />まちがえても、とけるまで おなじ もんだいが でるよ。</p>
+          <p class="challenge-info" id="challengeInfo" hidden>もんだいは 10もん。タイマーは 見えないから あせらなくて だいじょうぶ（じかんは そっと きろくされて、スピードアタックの ベストに はんえいされるよ）。<br />まちがえても、とけるまで おなじ もんだいが でるよ。</p>
           <button class="start-btn" id="startBtn" type="button">▶ スタート！</button>
         </section>
 
@@ -312,6 +312,7 @@
           <div id="challengeResult" hidden>
             <h2>⚡ パワーアップ かんりょう！</h2>
             <p id="challengeRewardText" style="font-weight: 800; line-height: 1.8;">パワーアップを チャージしたよ！</p>
+            <p id="challengeRecordNote" hidden style="font-weight: 700; line-height: 1.8; color: #b3543f;"></p>
             <a class="to-game-btn" id="toGameChallengeBtn" href="../games/star-striker/">🚀 ゲームに もどる</a>
           </div>
         </section>
@@ -324,7 +325,7 @@
 
       /* ---------- STAR STRIKER の九九チャレンジ（ご褒美方式） ---------- */
       // ゲームから来た時は「パワーアップチャレンジ」になる：おすすめの段・
-      // 10問固定・タイマーなし・記録なし。正解でチャージが貯まり、クリアで
+      // 10問固定・タイマーは非表示（裏で計時しベスト記録に反映）。正解でチャージが貯まり、クリアで
       // 1ラン分のパワーアップ（starStrikerPowerUp フラグ）がチャージされる。
       var POWER_UP_KEY = "starStrikerPowerUp";
       var CHALLENGE_COUNT = 10;
@@ -568,18 +569,29 @@
         viewGame.hidden = false;
         nextQuestion();
         if (challengeMode) { chargeCount = 0; updateCharge(); }
-        else startTimer();
+        startTimer(); // チャレンジでも裏で計時する（タイマー表示は隠れたまま）
         window.scrollTo({ top: 0 });
       }
 
       function finishGame(elapsed) {
         if (challengeMode) {
-          // チャレンジのクリア: 記録は残さず、1ラン分のパワーアップをチャージする
+          // チャレンジのクリア: 1ラン分のパワーアップをチャージし、
+          // 裏で計ったタイムをスピードアタックのベスト記録にも反映する
           var already = hasChargedPowerUp();
           try { localStorage.setItem(POWER_UP_KEY, "1"); } catch (e) { /* ほぞんできなくても すすむ */ }
           document.getElementById("challengeRewardText").textContent = already
             ? "パワーアップは もう チャージずみだよ！ ゲームで つかってみよう！"
             : "パワーアップを チャージしたよ！ ゲームの つぎの 1プレイが シールド＋3WAY＋むてきで スタートできるよ！";
+          var totalC = Math.round(elapsed * 10) / 10;
+          var prevC = loadBest();
+          var note = document.getElementById("challengeRecordNote");
+          if (prevC === null || totalC < prevC) {
+            try { localStorage.setItem(bestKey(), String(totalC)); } catch (e) { /* ほぞんできなくても すすむ */ }
+            note.textContent = "⏱ スピードアタックの " + danLabel(dan) + "・" + count + "もんの ベストきろくも こうしんしたよ！（" + totalC.toFixed(1) + "びょう）";
+            note.hidden = false;
+          } else {
+            note.hidden = true;
+          }
           document.getElementById("normalResult").hidden = true;
           document.getElementById("challengeResult").hidden = false;
           viewGame.hidden = true;
