@@ -108,6 +108,30 @@ test("パワーレベル3: シールド付きでスタートし、弾が強く�
   expect(await page.evaluate(() => player.hasShield)).toBe(true);
 });
 
+test("[P]アイテム: パワーレベルの基礎パターンを1段階引き上げる（Lv2→5WAY / Lv1→3WAY）", async ({ page }) => {
+  await page.addInitScript(() => localStorage.setItem("starStrikerPowerLevel", "2"));
+  await page.goto("/games/star-striker/");
+  await page.waitForFunction(() => typeof gameState !== "undefined" && gameState === "TITLE");
+  await canvasClick(page, 0.5, 0.65);
+  await page.waitForFunction(() => gameState === "PLAYING");
+  expect(await page.evaluate(() => powerLevel)).toBe(2);
+
+  const box = await page.locator("#gameCanvas").boundingBox();
+  await page.mouse.move(box.x + box.width * 0.5, box.y + box.height * 0.65);
+  await page.mouse.down();
+
+  // Lv2＋[P]: 5WAY（一番外側の弾 vx=-3.6 が出る）
+  await page.evaluate(() => { player.powerTimer = 480; });
+  await page.waitForFunction(() => bullets.some(b => b.vx <= -3.5), null, { timeout: 4000 });
+
+  // Lv1＋[P]: ツインではなく3WAY（vx=-1.8 が出て、5WAYの外側弾は出ない）
+  await page.evaluate(() => { powerLevel = 1; player.powerTimer = 480; bullets = []; });
+  await page.waitForFunction(() => bullets.some(b => Math.abs(b.vx + 1.8) < 0.01), null, { timeout: 4000 });
+  const hasOuter = await page.evaluate(() => bullets.some(b => b.vx <= -3.5));
+  expect(hasOuter).toBe(false);
+  await page.mouse.up();
+});
+
 test("難易度スケーリング: ボス撃破数で敵HP・出現間隔・ドロップ率が変わる", async ({ page }) => {
   await page.goto("/games/star-striker/");
   await page.waitForFunction(() => typeof gameState !== "undefined" && gameState === "TITLE");
