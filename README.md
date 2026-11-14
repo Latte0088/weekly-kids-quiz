@@ -9,4 +9,4 @@
 - `index.html` — 目次ページ（各回へのリンクカード）
 - `assets/style.css` — 全ページ共通のデザイン
 - `assets/quiz.js` — 全ページ共通のクイズエンジン
-- `quiz-001.html`、`quiz-002.html` … — 回ごとのページ（各5問）
+- `quiz/quiz-001.html`、`quiz/quiz-002.html` … — 回ごとのページ（各5問）
