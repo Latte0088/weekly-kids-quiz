@@ -10,3 +10,5 @@
 - `assets/style.css` — 全ページ共通のデザイン
 - `assets/quiz.js` — 全ページ共通のクイズエンジン
 - `quiz/quiz-001.html`、`quiz/quiz-002.html` … — 回ごとのページ（各5問）
+- `quiz/index.html` — 目次へのリダイレクトページ（古いキャッシュ対策。そのまま残す）
+- `kuku/index.html` — 九九スピードアタック（九九のタイムアタックゲーム）
