@@ -130,6 +130,34 @@
         border-radius: 16px; padding: 12px 14px; font-weight: 800; text-align: center;
         margin: 0 0 14px; font-size: 1.02rem;
       }
+      .osusume-btn {
+        background: var(--orange); color: #fff; box-shadow: 0 4px 0 #c25e00;
+      }
+      .osusume-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #c25e00; }
+      .osusume-note {
+        text-align: center; color: var(--ink-soft); font-weight: 800;
+        margin: 8px 0 0; font-size: 0.98rem; min-height: 1.4em;
+      }
+      .pick-btn:disabled { opacity: 0.45; cursor: default; }
+      .danger-zone { margin-top: 28px; text-align: center; }
+      .clear-records-btn {
+        background: transparent; color: var(--ink-soft); font-weight: 700; font-size: 0.92rem;
+        border: 2px solid #33496e; border-radius: 999px; padding: 8px 16px; min-height: 44px;
+      }
+      .clear-confirm {
+        background: var(--card); border-radius: 16px; padding: 16px 14px; margin-top: 12px;
+      }
+      .clear-confirm p { margin: 0 0 12px; font-weight: 800; }
+      .clear-confirm-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+      .confirm-yes {
+        min-height: 52px; border: none; border-radius: 999px;
+        background: var(--red); color: #fff; font-size: 1.05rem; font-weight: 800;
+      }
+      .confirm-no {
+        min-height: 52px; border: none; border-radius: 999px;
+        background: var(--key); color: var(--ink); font-size: 1.05rem; font-weight: 800;
+      }
+      .clear-done { color: var(--green); font-weight: 800; margin: 10px 0 0; }
       .game-btn {
         display: flex; align-items: center; justify-content: center;
         width: 100%; margin-top: 12px; min-height: 68px; border-radius: 999px;
@@ -177,6 +205,8 @@
           </div>
           <div class="dan-grid" id="danGrid"></div>
           <button class="pick-btn wide" id="danMix" type="button">ぜんぶ（ミックス）</button>
+          <button class="pick-btn wide osusume-btn" id="osusumeBtn" type="button">⭐ おすすめ</button>
+          <p class="osusume-note" id="osusumeNote"></p>
 
           <div class="sec-head" style="margin-top: 22px;">
             <h2 class="sec-title">2. もんだいすう を えらぶ</h2>
@@ -189,6 +219,18 @@
 
           <button class="start-btn" id="startBtn" type="button">▶ スタート！</button>
         </section>
+
+        <div class="danger-zone">
+          <button class="clear-records-btn" id="clearRecordsBtn" type="button">きろくを ぜんぶ けす（おうちのひと用）</button>
+          <div class="clear-confirm" id="clearConfirm" hidden>
+            <p>ほんとうに ぜんぶの ベストきろくを けしますか？</p>
+            <div class="clear-confirm-row">
+              <button class="confirm-yes" id="clearYesBtn" type="button">はい、けす</button>
+              <button class="confirm-no" id="clearNoBtn" type="button">いいえ</button>
+            </div>
+          </div>
+          <p class="clear-done" id="clearDone" hidden>きろくを けしました</p>
+        </div>
       </main>
 
       <!-- ================= ゲーム画面 ================= -->
@@ -374,7 +416,67 @@
           btn.classList.toggle("selected", count === c);
         });
         refreshBestLabel();
+        refreshOsusume();
       }
+
+      /* ---------- おすすめ（きろくが無い or ベストが いちばん ゆっくり） ---------- */
+      var osusume = null;
+      var osusumeBtn = document.getElementById("osusumeBtn");
+      var osusumeNote = document.getElementById("osusumeNote");
+
+      function bestFor(d, c) {
+        try {
+          var v = localStorage.getItem("kuku-best-" + d + "-" + c);
+          return v === null ? null : parseFloat(v);
+        } catch (e) { return null; }
+      }
+
+      function danLabel(d) { return d === 0 ? "ミックス" : d + "のだん"; }
+
+      function computeOsusume() {
+        var dans = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+        var candidates = [];
+        [10, 20].forEach(function (c) {
+          dans.forEach(function (d) { candidates.push({ dan: d, count: c }); });
+        });
+        // きろくが無いものを優先（10もん→20もん、1のだん→9のだん→ミックスの順）
+        for (var i = 0; i < candidates.length; i++) {
+          if (bestFor(candidates[i].dan, candidates[i].count) === null) {
+            return { dan: candidates[i].dan, count: candidates[i].count, reason: "none" };
+          }
+        }
+        // 全部にきろくがある場合は、1もんあたりの時間が いちばん長いもの
+        var slowest = null;
+        candidates.forEach(function (cd) {
+          var per = bestFor(cd.dan, cd.count) / cd.count;
+          if (slowest === null || per > slowest.per) {
+            slowest = { dan: cd.dan, count: cd.count, reason: "slow", per: per };
+          }
+        });
+        return slowest;
+      }
+
+      function refreshOsusume() {
+        osusume = computeOsusume();
+        if (!osusume) return;
+        osusumeBtn.textContent = "⭐ おすすめ（" + danLabel(osusume.dan) + "・" + osusume.count + "もん）";
+        osusumeNote.textContent = osusume.reason === "none"
+          ? "まだ きろくが ないよ。ここから はじめよう！"
+          : "いちばん ゆっくりだった きろくだよ。れんしゅうしよう！";
+      }
+
+      function applyOsusumeSelection() {
+        if (!osusume) refreshOsusume();
+        if (!osusume) return;
+        dan = osusume.dan;
+        count = osusume.count;
+        refreshSelection();
+      }
+
+      osusumeBtn.addEventListener("click", function () {
+        applyOsusumeSelection();
+        startGame();
+      });
 
       /* ---------- ゲーム ---------- */
       var qIndex = 0;         // いまの もんだい (1はじまり)
@@ -535,8 +637,48 @@
       document.getElementById("reselectBtn").addEventListener("click", goStart);
       document.getElementById("againBtn").addEventListener("click", startGame);
 
+      /* ---------- きろくクリア（おうちのひと用、Yes/No確認つき） ---------- */
+      var clearConfirm = document.getElementById("clearConfirm");
+      var clearDone = document.getElementById("clearDone");
+      document.getElementById("clearRecordsBtn").addEventListener("click", function () {
+        clearDone.hidden = true;
+        clearConfirm.hidden = false;
+      });
+      document.getElementById("clearNoBtn").addEventListener("click", function () {
+        clearConfirm.hidden = true;
+      });
+      document.getElementById("clearYesBtn").addEventListener("click", function () {
+        try {
+          var keys = [];
+          for (var i = 0; i < localStorage.length; i++) {
+            var k = localStorage.key(i);
+            if (k && k.indexOf("kuku-best-") === 0) keys.push(k);
+          }
+          keys.forEach(function (k) { localStorage.removeItem(k); });
+        } catch (e) { /* けせなくても つづける */ }
+        clearConfirm.hidden = true;
+        clearDone.hidden = false;
+        refreshSelection();
+        if (gateMode) applyGateSelection();
+      });
+
+      /* ---------- ゲート時は おすすめを自動選択して 変更できないようにする ---------- */
+      function applyGateSelection() {
+        applyOsusumeSelection();
+        for (var n = 1; n <= 9; n++) danButtons[n].disabled = true;
+        danMix.disabled = true;
+        countButtons.forEach(function (btn) { btn.disabled = true; });
+        var banner = document.getElementById("gateBanner");
+        if (osusume) {
+          banner.innerHTML = "🎮 ゲームオーバー！ おすすめの " +
+            danLabel(osusume.dan) + "・" + osusume.count +
+            "もんを さいごまで とくと、また ゲームで あそべるよ";
+        }
+      }
+
       refreshSelection();
       syncSoundButtons();
+      if (gateMode) applyGateSelection();
     </script>
   </body>
 </html>
