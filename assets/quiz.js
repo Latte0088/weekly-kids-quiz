@@ -205,7 +205,7 @@
         renderQuestion();
         window.scrollTo({ top: 0 });
       }
-      function goHome() { location.href = "../index.html"; }
+      function goHome() { location.href = "index.html"; }
 
       document.getElementById("backHome").addEventListener("click", goHome);
       document.getElementById("againBtn").addEventListener("click", startQuiz);
