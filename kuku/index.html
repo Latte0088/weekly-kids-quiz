@@ -311,7 +311,7 @@
           </div>
           <div id="challengeResult" hidden>
             <h2>⚡ パワーアップ かんりょう！</h2>
-            <p id="challengeRewardText" style="font-weight: 800; line-height: 1.8;">パワーレベルが あがったよ！</p>
+            <p id="challengeRewardText" style="font-weight: 800; line-height: 1.8;">パワーアップを チャージしたよ！</p>
             <a class="to-game-btn" id="toGameChallengeBtn" href="../games/star-striker/">🚀 ゲームに もどる</a>
           </div>
         </section>
@@ -325,8 +325,8 @@
       /* ---------- STAR STRIKER の九九チャレンジ（ご褒美方式） ---------- */
       // ゲームから来た時は「パワーアップチャレンジ」になる：おすすめの段・
       // 10問固定・タイマーなし・記録なし。正解でチャージが貯まり、クリアで
-      // ゲーム側のパワーレベル（starStrikerPowerLevel、最大3）が1上がる。
-      var POWER_LEVEL_KEY = "starStrikerPowerLevel";
+      // 1ラン分のパワーアップ（starStrikerPowerUp フラグ）がチャージされる。
+      var POWER_UP_KEY = "starStrikerPowerUp";
       var CHALLENGE_COUNT = 10;
       var challengeMode = false;
       var chargeCount = 0;
@@ -334,17 +334,8 @@
         challengeMode = new URLSearchParams(location.search).get("challenge") === "star-striker";
       } catch (e) { /* よめなくても ふつうに あそべる */ }
 
-      function loadPowerLevel() {
-        try {
-          var v = parseInt(localStorage.getItem(POWER_LEVEL_KEY) || "0", 10);
-          return isNaN(v) ? 0 : Math.max(0, Math.min(3, v));
-        } catch (e) { return 0; }
-      }
-
-      function rewardTextFor(level) {
-        if (level === 1) return "パワーレベル 1に あがった！ ゲームで ツインレーザーが つかえるよ！";
-        if (level === 2) return "パワーレベル 2に あがった！ ゲームで 3WAYショットと アイテムマグネットが つかえるよ！";
-        return "パワーレベル 3（MAX）に あがった！ ゲームで つよい たま＋シールドで スタートできるよ！";
+      function hasChargedPowerUp() {
+        try { return localStorage.getItem(POWER_UP_KEY) === "1"; } catch (e) { return false; }
       }
 
       /* ---------- 設定 ---------- */
@@ -583,12 +574,12 @@
 
       function finishGame(elapsed) {
         if (challengeMode) {
-          // チャレンジのクリア: 記録は残さず、ゲームのパワーレベルを1上げる
-          var before = loadPowerLevel();
-          var newLevel = Math.min(3, before + 1);
-          try { localStorage.setItem(POWER_LEVEL_KEY, String(newLevel)); } catch (e) { /* ほぞんできなくても すすむ */ }
-          document.getElementById("challengeRewardText").textContent =
-            before >= 3 ? "パワーレベルは MAX（3）だよ！ チャレンジ ありがとう！" : rewardTextFor(newLevel);
+          // チャレンジのクリア: 記録は残さず、1ラン分のパワーアップをチャージする
+          var already = hasChargedPowerUp();
+          try { localStorage.setItem(POWER_UP_KEY, "1"); } catch (e) { /* ほぞんできなくても すすむ */ }
+          document.getElementById("challengeRewardText").textContent = already
+            ? "パワーアップは もう チャージずみだよ！ ゲームで つかってみよう！"
+            : "パワーアップを チャージしたよ！ ゲームの つぎの 1プレイが シールド＋3WAY＋むてきで スタートできるよ！";
           document.getElementById("normalResult").hidden = true;
           document.getElementById("challengeResult").hidden = false;
           viewGame.hidden = true;
@@ -737,7 +728,7 @@
         if (osusume) {
           banner.innerHTML = "🚀 パワーアップ ちょうせん！ おすすめの " +
             danLabel(osusume.dan) + "・" + CHALLENGE_COUNT +
-            "もんを とくと、ゲームの パワーレベルが あがるよ ⚡";
+            "もんを とくと、ゲームの つぎの 1プレイが パワーアップするよ ⚡";
         }
         banner.hidden = false;
         document.getElementById("challengeInfo").hidden = false;
