@@ -25,3 +25,7 @@ Playwright で実際のブラウザを操作して検証します（おべんと
 
 - ローカル実行: `npm ci` → `npx playwright install chromium` → `npm test`（テスト用サーバーが自動で起動します）
 - CI: main への push と Pull Request で GitHub Actions が自動実行します。公開（GitHub Pages へのデプロイ）は従来どおり push で自動反映されます。
+
+## 開発フロー
+
+変更はブランチを作成して行い、CI（Playwrightテスト）が通過してから `main` にマージします（`main` へ直接コミットしません）。
