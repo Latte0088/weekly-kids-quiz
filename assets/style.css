@@ -344,6 +344,15 @@ a.latest-btn {
   text-decoration: none;
 }
 a.latest-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--coral-dark); }
+a.random-btn {
+  display: block; margin-top: 14px;
+  min-height: 64px; padding: 16px 20px 12px;
+  font-size: 1.2rem; font-weight: 800; text-align: center; line-height: 1.45;
+  color: #fff; background: var(--teal);
+  border-radius: 999px; box-shadow: 0 6px 0 #00796b;
+  text-decoration: none;
+}
+a.random-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #00796b; }
 .howto-details {
   background: var(--card-soft);
   border: 3px dashed var(--sun);
