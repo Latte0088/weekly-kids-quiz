@@ -65,16 +65,35 @@
   }
   .bento-cell.filled { border-style: solid; border-color: #ffd9a0; animation: pop-in .35s cubic-bezier(.34,1.56,.64,1); }
   @keyframes pop-in { 0% { transform: scale(.3); } 100% { transform: scale(1); } }
-  .food-tray { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 20px; max-width: 520px; }
+  .food-tray { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-top: 20px; width: min(94vw, 430px); }
   .food-btn {
-    width: 76px; height: 76px; border-radius: 24px; border: 4px solid #ffe1ae; background: #fff;
-    font-size: 2.5rem; cursor: pointer; box-shadow: 0 5px 0 #ecd9b8;
+    width: 100%; aspect-ratio: 1; border-radius: 22px; border: 4px solid #ffe1ae; background: #fff;
+    font-size: clamp(1.9rem, 8.5vw, 2.5rem); cursor: pointer; box-shadow: 0 5px 0 #ecd9b8;
     display: flex; align-items: center; justify-content: center;
   }
   .food-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #ecd9b8; }
   .food-btn.used { opacity: .22; pointer-events: none; }
   .bento-actions { margin-top: auto; width: 100%; max-width: 520px; display: flex; justify-content: flex-end; padding-top: 14px; }
   #doneBtn { background: #ff7b54; font-size: 1.5rem; padding: 10px 34px; }
+  /* 背の低い画面（スマホ）では全体を圧縮して「できた！」が画面内に収まるようにする */
+  @media (max-height: 760px) {
+    #view-bento { padding: 74px 10px 10px; }
+    .plate-row { margin-bottom: 4px; }
+    .plate-btn { min-height: 52px; font-size: .95rem; }
+    .bento-box { padding: 9px; }
+    .bento-grid { gap: 6px; }
+    .food-tray { margin-top: 12px; gap: 8px; }
+    .bento-actions { padding-top: 8px; }
+    #doneBtn { min-height: 64px; }
+    .eat-banner { margin-top: 8px; }
+    .eat-face { font-size: 2.8rem; }
+  }
+  @media (max-height: 560px) {
+    #view-bento { padding-top: 66px; }
+    .bento-wrap { width: min(80vw, 340px); }
+    .plate-btn { min-height: 46px; }
+    #doneBtn { min-height: 56px; font-size: 1.3rem; }
+  }
   .celebrate {
     position: absolute; inset: 0; background: rgba(255,248,238,.93); z-index: 60;
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
