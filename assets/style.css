@@ -334,3 +334,33 @@
       }
     
 a.quiz-card { text-decoration: none; }
+
+a.latest-btn {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  min-height: 76px; padding: 16px 20px;
+  font-size: 1.35rem; font-weight: 800; text-align: center;
+  color: #fff; background: var(--coral);
+  border-radius: 999px; box-shadow: 0 6px 0 var(--coral-dark);
+  text-decoration: none;
+}
+a.latest-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--coral-dark); }
+.howto-details {
+  background: var(--card-soft);
+  border: 3px dashed var(--sun);
+  border-radius: 24px;
+  padding: 4px 22px 16px;
+}
+.howto-details summary {
+  min-height: 56px; display: flex; align-items: center; gap: 10px;
+  font-weight: 800; font-size: 1.15rem; cursor: pointer; list-style: none;
+}
+.howto-details summary::-webkit-details-marker { display: none; }
+.howto-details summary .chev { margin-left: auto; color: var(--ink-soft); }
+.howto-details ul { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.howto-details li { display: flex; gap: 12px; align-items: flex-start; font-weight: 700; font-size: 1.02rem; }
+.howto-details li .step {
+  flex: 0 0 auto; width: 34px; height: 34px; border-radius: 50%;
+  background: var(--sun); color: #5c3d00;
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; margin-top: 2px;
+}
