@@ -21,7 +21,7 @@
 - `assets/questions.js` — ランダムモード用の全問プール（`tools/build_questions.py` が各回から自動生成。手で編集しない）
 - `quiz/quiz-001.html`、`quiz/quiz-002.html` … — 回ごとのページ（各5問）
 - `quiz/random.html` — ランダム5問モード（全問プールから重ならない5問を毎回ランダム出題）
-- `kuku/index.html` — 九九スピードアタック（九九のタイムアタックゲーム）
+- `kuku/index.html` — 九九スピードアタック（九九のタイムアタックゲーム）。出題はシャッフル山札方式で、かけられる数（ミックスでは かける数も）が9問ごとに1〜9を一巡し、連続で同じ数字は出ない
 - `tests/` — Playwrightによる自動テスト一式（下記）
 - `.github/workflows/tests.yml` — GitHub Actions CI（push / Pull Request で自動テスト）
 

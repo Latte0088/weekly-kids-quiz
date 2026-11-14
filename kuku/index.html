@@ -529,13 +529,38 @@
 
       function rand19() { return 1 + Math.floor(Math.random() * 9); }
 
+      /* ---------- 出題はシャッフル山札（デッキ）方式 ---------- */
+      // 1〜9をシャッフルした山札から1枚ずつ出すので、9問ごとに全数字が
+      // ちょうど1回ずつ出る（偏りがない）。山札が空になったら作り直し、
+      // 先頭が直前の数字と同じなら入れ替えて、連続で同じ数字は出さない。
+      var deckA = [];   // ミックスのときの かける数 用
+      var deckB = [];   // かけられる数 用（全モード共通）
+      var lastA = 0;
+      var lastB = 0;
+
+      function refillDeck(deck, lastValue) {
+        var arr = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        for (var i = arr.length - 1; i > 0; i--) {
+          var j = Math.floor(Math.random() * (i + 1));
+          var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+        }
+        if (arr[0] === lastValue) {
+          var k = 1 + Math.floor(Math.random() * 8);
+          var tt = arr[0]; arr[0] = arr[k]; arr[k] = tt;
+        }
+        for (var n = 0; n < arr.length; n++) deck.push(arr[n]);
+      }
+
       function nextQuestion() {
-        var a, b, guard = 0;
-        do {
-          a = dan === 0 ? rand19() : dan;
-          b = rand19();
-          guard++;
-        } while (prev && a === prev.a && b === prev.b && guard < 20);
+        var a, b;
+        if (dan === 0) {
+          if (deckA.length === 0) refillDeck(deckA, lastA);
+          a = deckA.shift(); lastA = a;
+        } else {
+          a = dan;
+        }
+        if (deckB.length === 0) refillDeck(deckB, lastB);
+        b = deckB.shift(); lastB = b;
         prev = { a: a, b: b };
         cur = { a: a, b: b, ans: a * b };
         input = "";
@@ -564,6 +589,7 @@
         qIndex = 1;
         streak = 0;
         prev = null;
+        deckA = []; deckB = []; lastA = 0; lastB = 0;
         viewStart.hidden = true;
         viewResult.hidden = true;
         viewGame.hidden = false;

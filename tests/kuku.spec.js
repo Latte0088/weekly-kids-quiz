@@ -33,4 +33,25 @@ test.describe("九九スピードアタック", () => {
     await expect(fx).toHaveClass(/show-ok/);
     await expect(fx).toHaveText("○");
   });
+
+  test("出題はシャッフル山札: 10問で1〜9が満遍なく出て、連続で同じ数字にならない", async ({ page }) => {
+    await page.goto("/kuku/");
+    await page.locator("#danGrid .pick-btn").filter({ hasText: /^7のだん$/ }).click();
+    await page.click("#startBtn");
+    await expect(page.locator("#view-game")).toBeVisible();
+    const bs = [];
+    for (let i = 0; i < 10; i++) {
+      const a = Number(await page.locator("#qA").textContent());
+      const b = Number(await page.locator("#qB").textContent());
+      expect(a).toBe(7);
+      bs.push(b);
+      await tapDigits(page, a * b);
+      await page.waitForTimeout(150);
+    }
+    await expect(page.locator("#view-result")).toBeVisible();
+    // 最初の9問で1〜9がちょうど1回ずつ出る
+    expect([...bs.slice(0, 9)].sort((x, y) => x - y)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    // 連続で同じ数字は出ない（山札の継ぎ目も含む）
+    for (let i = 1; i < bs.length; i++) expect(bs[i]).not.toBe(bs[i - 1]);
+  });
 });
