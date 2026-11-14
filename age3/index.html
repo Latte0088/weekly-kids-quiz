@@ -984,7 +984,8 @@ var COLORS = [
 ];
 var STAMPS = [
   { id: "star", label: "★" }, { id: "heart", label: "♥" }, { id: "flower", label: "✿" },
-  { id: "shinkansen", label: "🚅" }, { id: "panda", label: "🐼" }, { id: "dino", label: "🦖" }, { id: "patcar", label: "🚓" }
+  { id: "shinkansen", label: "🚅" }, { id: "panda", label: "🐼" }, { id: "dino", label: "🦖" }, { id: "patcar", label: "🚓" },
+  { id: "neko", label: "🐱" }, { id: "inu", label: "🐶" }, { id: "usagi", label: "🐰" }, { id: "sakana", label: "🐟" }, { id: "taiyo", label: "☀️" }
 ];
 var curColor = COLORS[0].c, curStamp = "star";
 var stampCount = 0, drawingNow = false, lastPt = null, lastSoundAt = 0;
@@ -1084,8 +1085,8 @@ function drawStampShape(ctx, x, y, size, color, shape) {
     ctx.beginPath(); ctx.arc(s * 0.78, -s * 0.72, s * 0.34, 0, 6.29); ctx.fill();
     ctx.beginPath(); ctx.arc(0, 0, s, 0, 6.29); ctx.fill();
     ctx.fillStyle = "#263238";
-    ctx.beginPath(); ctx.ellipse(-s * 0.36, -s * 0.08, s * 0.17, s * 0.24, -0.3, 0, 6.29); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(s * 0.36, -s * 0.08, s * 0.17, s * 0.24, 0.3, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(-s * 0.36, -s * 0.08, s * 0.17, s * 0.24, 0.3, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s * 0.36, -s * 0.08, s * 0.17, s * 0.24, -0.3, 0, 6.29); ctx.fill();
     ctx.beginPath(); ctx.ellipse(0, s * 0.3, s * 0.14, s * 0.1, 0, 0, 6.29); ctx.fill();
   } else if (shape === "dino") {
     ctx.beginPath();
@@ -1125,6 +1126,55 @@ function drawStampShape(ctx, x, y, size, color, shape) {
     ctx.fillStyle = "#263238";
     ctx.beginPath(); ctx.arc(-s * 0.95, s * 0.72, s * 0.3, 0, 6.29); ctx.fill();
     ctx.beginPath(); ctx.arc(s * 0.95, s * 0.72, s * 0.3, 0, 6.29); ctx.fill();
+  } else if (shape === "neko") {
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.74, -s * 0.5); ctx.lineTo(-s * 0.8, -s * 1.18); ctx.lineTo(-s * 0.22, -s * 0.86);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(s * 0.74, -s * 0.5); ctx.lineTo(s * 0.8, -s * 1.18); ctx.lineTo(s * 0.22, -s * 0.86);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.95, 0, 6.29); ctx.fill();
+    ctx.fillStyle = "#263238";
+    ctx.beginPath(); ctx.ellipse(-s * 0.35, -s * 0.12, s * 0.11, s * 0.17, 0, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s * 0.35, -s * 0.12, s * 0.11, s * 0.17, 0, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, s * 0.28, s * 0.15, s * 0.1, 0, 0, 6.29); ctx.fill();
+  } else if (shape === "inu") {
+    ctx.beginPath(); ctx.ellipse(-s * 0.92, -s * 0.22, s * 0.34, s * 0.62, 0.35, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s * 0.92, -s * 0.22, s * 0.34, s * 0.62, -0.35, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.92, 0, 6.29); ctx.fill();
+    ctx.fillStyle = "#263238";
+    ctx.beginPath(); ctx.ellipse(-s * 0.34, -s * 0.16, s * 0.11, s * 0.16, 0, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s * 0.34, -s * 0.16, s * 0.11, s * 0.16, 0, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, s * 0.3, s * 0.2, s * 0.14, 0, 0, 6.29); ctx.fill();
+  } else if (shape === "usagi") {
+    ctx.beginPath(); ctx.ellipse(-s * 0.38, -s * 1.02, s * 0.24, s * 0.6, -0.14, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s * 0.38, -s * 1.02, s * 0.24, s * 0.6, 0.14, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.arc(0, s * 0.18, s * 0.88, 0, 6.29); ctx.fill();
+    ctx.fillStyle = "#263238";
+    ctx.beginPath(); ctx.ellipse(-s * 0.32, s * 0.06, s * 0.1, s * 0.15, 0, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(s * 0.32, s * 0.06, s * 0.1, s * 0.15, 0, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, s * 0.44, s * 0.13, s * 0.09, 0, 0, 6.29); ctx.fill();
+  } else if (shape === "sakana") {
+    ctx.beginPath();
+    ctx.moveTo(s * 0.95, 0); ctx.lineTo(s * 1.68, -s * 0.62); ctx.lineTo(s * 1.68, s * 0.62);
+    ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(0, 0, s * 1.25, s * 0.78, 0, 0, 6.29); ctx.fill();
+    ctx.fillStyle = "#263238";
+    ctx.beginPath(); ctx.arc(-s * 0.62, -s * 0.14, s * 0.13, 0, 6.29); ctx.fill();
+  } else if (shape === "taiyo") {
+    for (var k2 = 0; k2 < 8; k2++) {
+      var a3 = k2 * Math.PI / 4;
+      var cx = Math.cos(a3), cy = Math.sin(a3);
+      var px2 = -cy, py2 = cx;
+      ctx.beginPath();
+      ctx.moveTo(cx * s * 0.92 + px2 * s * 0.2, cy * s * 0.92 + py2 * s * 0.2);
+      ctx.lineTo(cx * s * 1.42, cy * s * 1.42);
+      ctx.lineTo(cx * s * 0.92 - px2 * s * 0.2, cy * s * 0.92 - py2 * s * 0.2);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.82, 0, 6.29); ctx.fill();
+    ctx.fillStyle = "#fff59d";
+    ctx.beginPath(); ctx.arc(0, 0, s * 0.5, 0, 6.29); ctx.fill();
   } else {
     for (var k = 0; k < 5; k++) {
       var a2 = -Math.PI / 2 + k * (Math.PI * 2 / 5);
@@ -1143,7 +1193,7 @@ function spawnSparkles(x, y, color, n) {
   }
 }
 function stampAt(x, y) {
-  var fav = curStamp === "shinkansen" || curStamp === "panda" || curStamp === "dino" || curStamp === "patcar";
+  var fav = ["shinkansen", "panda", "dino", "patcar", "neko", "inu", "usagi", "sakana", "taiyo"].indexOf(curStamp) !== -1;
   drawStampShape(artX, x, y, fav ? 24 : 15, curColor, curStamp);
   stampCount++;
   spawnSparkles(x, y, curColor, 3);
