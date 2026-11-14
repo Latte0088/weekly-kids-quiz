@@ -48,6 +48,19 @@ test.describe("おべんとうづくり", () => {
     await expect(page.locator("#moguText")).toContainText("ごちそうさま");
   });
 
+  test("スマホ画面（375×667）でも「できた！」が画面内にあり押せる", async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 667 });
+    await openBento(page);
+    await fillCells(page, [0, 1, 2, 3]);
+    const box = await page.locator("#doneBtn").boundingBox();
+    expect(box).not.toBeNull();
+    expect(box.y + box.height).toBeLessThanOrEqual(667);
+    await page.click("#doneBtn");
+    await expect(page.locator("#eatBanner")).toBeVisible();
+    await eatAllRapid(page);
+    await expect(page.locator("#celebrate")).toBeVisible();
+  });
+
   test("あーん：もういっかい後の2回目も完了する（リプレイ回帰）", async ({ page }) => {
     await openBento(page);
     await fillCells(page, [0, 1, 2, 3]);
