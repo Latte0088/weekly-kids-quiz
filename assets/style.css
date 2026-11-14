@@ -336,9 +336,9 @@
 a.quiz-card { text-decoration: none; }
 
 a.latest-btn {
-  display: flex; align-items: center; justify-content: center; gap: 10px;
-  min-height: 76px; padding: 16px 20px;
-  font-size: 1.35rem; font-weight: 800; text-align: center;
+  display: block;
+  min-height: 76px; padding: 20px 20px 16px;
+  font-size: 1.35rem; font-weight: 800; text-align: center; line-height: 1.45;
   color: #fff; background: var(--coral);
   border-radius: 999px; box-shadow: 0 6px 0 var(--coral-dark);
   text-decoration: none;
