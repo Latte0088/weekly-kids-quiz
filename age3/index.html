@@ -196,7 +196,6 @@
   .stamp-pop-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
   .stamp-pop-grid .stamp-btn { width: 72px; height: 72px; font-size: 2.1rem; }
   .stamp-pop-close { display: block; margin: 16px auto 0; min-height: 64px; padding: 6px 30px; border-radius: 999px; border: 4px solid #3a4176; background: #1c2250; color: #fff; font-family: inherit; font-size: 1.15rem; font-weight: 800; cursor: pointer; }
-  #trashBtn { color: #cfd8dc; }
   #launchBtn { background: linear-gradient(180deg, #ff8a50, #ff5252); font-size: 1.4rem; padding: 8px 26px; }
   .draw-home { background: rgba(255,255,255,.92); }
 </style>
@@ -280,7 +279,6 @@
     <div class="draw-bar">
       <span id="colorBtns"></span>
       <button type="button" class="stamp-btn stamp-toggle" id="stampToggle" aria-label="スタンプをえらぶ">★</button>
-      <button type="button" class="stamp-btn" id="trashBtn" aria-label="けす">🗑️</button>
       <button type="button" class="big-btn" id="launchBtn">🚀 うちあげ！</button>
     </div>
     <div class="stamp-pop" id="stampPop" hidden>
@@ -1159,12 +1157,6 @@ fxC.addEventListener("pointermove", function (e) {
 ["pointerup", "pointercancel"].forEach(function (ev) {
   fxC.addEventListener(ev, function () { drawingNow = false; });
 });
-document.getElementById("trashBtn").addEventListener("click", function () {
-  if (launchPhase) return;
-  ensureAudio(); sndRemove();
-  artX.clearRect(0, 0, stageEl.clientWidth, stageEl.clientHeight);
-  stampCount = 0;
-});
 document.getElementById("launchBtn").addEventListener("click", function () {
   if (launchPhase) return;
   ensureAudio();
@@ -1194,6 +1186,15 @@ var SHAPES = {
   dino: { color: "#b2ff59", pts: [[-1, 0.2], [-0.6, -0.15], [-0.1, -0.35], [0.4, -0.55], [0.75, -0.85], [1, -0.65], [0.95, -0.3], [0.6, -0.2], [0.5, 0.1], [0.65, 0.55], [0.4, 0.6], [0.25, 0.25], [-0.1, 0.4], [-0.05, 0.65], [-0.3, 0.65], [-0.5, 0.4], [-0.8, 0.45]] },
   patcar: { color: "#ff8a80", pts: [[-1, 0.25], [-1, -0.1], [-0.5, -0.15], [-0.35, -0.5], [0.3, -0.5], [0.5, -0.15], [1, -0.1], [1, 0.25], [0.62, 0.25], [0.62, 0.5], [0.35, 0.5], [0.35, 0.25], [-0.35, 0.25], [-0.35, 0.5], [-0.62, 0.5], [-0.62, 0.25]] }
 };
+Object.keys(SHAPES).forEach(function (k) {
+  var pts = SHAPES[k].pts, out = [];
+  for (var i = 0; i < pts.length; i++) {
+    out.push(pts[i]);
+    var nx = pts[(i + 1) % pts.length];
+    out.push([(pts[i][0] + nx[0]) / 2, (pts[i][1] + nx[1]) / 2]);
+  }
+  SHAPES[k].pts = out;
+});
 function spawnShapeBurst(cx, cy, key, R) {
   var sh = SHAPES[key];
   sh.pts.forEach(function (pt) {
