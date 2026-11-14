@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>だい3かい クイズ | 小学2年生の家庭学習教材</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+
+      <main id="view-quiz">
+        <div class="quiz-top">
+          <button class="back-btn" id="backHome" type="button">← もくじへ もどる</button>
+          <div class="progress-box">
+            <span class="qcount" id="qCount"></span>
+            <span class="stars" id="progressStars" aria-label="あつめた ほし"></span>
+          </div>
+        </div>
+
+        <section class="question-card" id="questionCard">
+          <span class="cat-chip" id="catChip"></span>
+          <div class="q-illust" id="qIllust" aria-hidden="true"></div>
+          <p class="q-text" id="qText"></p>
+          <p class="q-sub" id="qSub"></p>
+          <div class="choices" id="choices"></div>
+
+          <div class="feedback try" id="feedbackTry" hidden>
+            <p class="big">おしい！😮</p>
+            <p id="hintText"></p>
+          </div>
+
+          <div id="correctArea" hidden>
+            <div class="feedback good">
+              <p class="big" id="praiseText">ピンポーン！すごい！🎉</p>
+              <p>やったね！<ruby>正解<rt>せいかい</rt></ruby>だよ。</p>
+            </div>
+            <div class="fact-box">
+              <p class="fact-head">💡 へぇ〜！まめちしき</p>
+              <p id="factText"></p>
+            </div>
+            <button class="next-btn" id="nextBtn" type="button"></button>
+          </div>
+        </section>
+      </main>
+
+      <main id="view-result" hidden>
+        <section class="result-card" id="resultCard">
+          <div class="medal-wrap">
+            <svg width="150" height="170" viewBox="0 0 150 170" role="img" aria-label="メダルの イラスト">
+              <path d="M52 0 L75 52 L62 60 L38 8 Z" fill="#ff6b4a"/>
+              <path d="M98 0 L75 52 L88 60 L112 8 Z" fill="#3d9bff"/>
+              <circle id="medalCircle" cx="75" cy="105" r="52" fill="#f5a623"/>
+              <circle cx="75" cy="105" r="42" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="5 7" opacity="0.85"/>
+              <path d="M75 76 L84 96 L105 97 L89 110 L94 131 L75 119 L56 131 L61 110 L45 97 L66 96 Z" fill="#ffffff"/>
+            </svg>
+          </div>
+          <h2>クイズ クリア！🎉</h2>
+          <div class="result-stars" id="resultStars"></div>
+          <p class="result-msg" id="medalName"></p>
+          <p class="result-msg" id="resultMsg"></p>
+          <div class="result-btns">
+            <button class="again-btn" id="againBtn" type="button">🔁 もういちど あそぶ</button>
+            <button class="home-btn" id="resultHomeBtn" type="button">📚 もくじへ もどる</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      var QUIZ_DATA = [
+        {
+          cat: "🕐 とけい さんすう",
+          catClass: "c1",
+          illust: "🕐",
+          q: "いまの じこくは 3じ ちょうどです。30<ruby>分<rt>ぷん</rt></ruby> たつと、なんじ なん<ruby>分<rt>ぷん</rt></ruby>でしょう？",
+          sub: "とけいの ながい はりが どれだけ すすむか、かんがえて みよう。",
+          choices: [
+            { t: "3じ30<ruby>分<rt>ぷん</rt></ruby>", ok: true },
+            { t: "4じ ちょうど", ok: false },
+            { t: "3じ5<ruby>分<rt>ふん</rt></ruby>", ok: false },
+            { t: "2じ30<ruby>分<rt>ぷん</rt></ruby>", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：30<ruby>分<rt>ぷん</rt></ruby> たつと、<ruby>時計<rt>とけい</rt></ruby>の ながい <ruby>針<rt>はり</rt></ruby>は <ruby>半分<rt>はんぶん</rt></ruby> <ruby>回<rt>まわ</rt></ruby>って「6」の ところに くるよ。",
+          fact: "とけいの ながい はりは、1じかんで ぐるっと 1しゅう するよ。30ぷんは その はんぶんだから、はりは はんぶんだけ すすむんだね。みじかい はりも、3と 4の あいだまで そっと すすんでいるよ！"
+        },
+        {
+          cat: "🔢 かずの ひらめき",
+          catClass: "c2",
+          illust: "🔢",
+          q: "1から 10までの すうじを かんがえて みよう。すうじの「1」は、ぜんぶで なんかい でてくるでしょう？",
+          sub: "1、2、3…と じゅんばんに おもいうかべて みよう。",
+          choices: [
+            { t: "1かい", ok: false },
+            { t: "2かい", ok: true },
+            { t: "3かい", ok: false },
+            { t: "11かい", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：「10」の なかにも「1」が かくれているよ。",
+          fact: "「1」は、「1」と「10」の 2つに でてくるから 2かい！すうじを じゅんばんに かいて かんがえると、かくれた「1」も みつけられるね。こういう もんだいは「ひらめき」が だいじだよ！"
+        },
+        {
+          cat: "🐈 ことば クイズ",
+          catClass: "c3",
+          illust: "🐈",
+          q: "とても いそがしい とき、「○○の ても かりたい」と いいます。○○に はいる どうぶつは どれでしょう？",
+          sub: "じぶんの てだけでは たりないくらい いそがしい、という いみの ことばだよ。",
+          choices: [
+            { t: "いぬ", ok: false },
+            { t: "ねこ", ok: true },
+            { t: "うま", ok: false },
+            { t: "ぞう", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：「にゃー」と なく どうぶつだよ。",
+          fact: "「ねこの ても かりたい」は、とても いそがしくて、ねこの てでも いいから てつだって ほしい、という いみの ことわざだよ。ほんとうに ねこが てつだって くれるかは、ナイショだね！"
+        },
+        {
+          cat: "🐧 いきもの ざつがく",
+          catClass: "c4",
+          illust: "🐧",
+          q: "ペンギンは とりの なかまですが、そらを とぶことが できません。かわりに とても とくいなのは どれでしょう？",
+          sub: "ペンギンは さむい うみの ちかくに すんでいるよ。",
+          choices: [
+            { t: "<ruby>木<rt>き</rt></ruby>に のぼること", ok: false },
+            { t: "およぐこと", ok: true },
+            { t: "<ruby>土<rt>つち</rt></ruby>に もぐること", ok: false },
+            { t: "はやく はしること", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：ペンギンの つばさは、およぐための ヒレみたいに なっているよ。",
+          fact: "ペンギンの つばさは ヒレの ように なっていて、みずの なかを まるで とぶように スイスイ およぐよ！コウテイペンギンは およそ 1メートル20センチも あって、ペンギンの なかで いちばん 大きいんだ。へぇ〜！"
+        },
+        {
+          cat: "❓ なぞなぞ",
+          catClass: "c5",
+          illust: "🎠",
+          q: "なぞなぞです。かたほうが あがると、もう かたほうが さがります。こうえんに ある あそびどうぐは なんでしょう？",
+          sub: "おとなも いっしょに かんがえて みてね。",
+          choices: [
+            { t: "ブランコ", ok: false },
+            { t: "すべりだい", ok: false },
+            { t: "シーソー", ok: true },
+            { t: "てつぼう", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：ふたりで のって あそぶよ。「ギッコンバッタン」とも いうね。",
+          fact: "シーソーは、まんなかを ささえに して、かたほうが あがると もう かたほうが さがる あそびどうぐだよ。ふたりの おもさが ちょうど つりあうと、うかんだまま とまることも あるんだ！"
+        }
+      ];
+    </script>
+    <script src="../assets/quiz.js?v=3"></script>
+  </body>
+</html>
