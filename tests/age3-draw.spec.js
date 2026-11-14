@@ -39,6 +39,27 @@ test.describe("キラキラ はなび", () => {
     await expect(page.locator("#stampToggle")).toHaveText("🍎");
   });
 
+  test("貼ったスタンプが変身花火になる（パンダを貼るとパンダ色の形の粒が出る）", async ({ page }) => {
+    await openDraw(page);
+    // スタンプのドット化が十分な点数を持つ
+    const pts = await page.evaluate(() => stampPoints("panda").length);
+    expect(pts).toBeGreaterThan(100);
+    await page.click("#stampToggle");
+    await page.click('#stampBtns .stamp-btn[aria-label="panda"]');
+    const box = await page.locator("#fxCanvas").boundingBox();
+    const cx = box.x + box.width / 2, cy = box.y + box.height / 2;
+    for (let i = 0; i < 30; i++) {
+      await page.mouse.click(cx - 120 + (i % 6) * 48, cy - 80 + Math.floor(i / 6) * 40);
+    }
+    await expect.poll(() => page.evaluate(() => stampCount)).toBeGreaterThanOrEqual(30);
+    await page.click("#launchBtn");
+    // 既定色（あか #ff5252）は従来の変身花火4種にはない色なので、
+    // この色の形の粒が出たら「貼ったスタンプの花火」と断定できる
+    await expect
+      .poll(async () => page.evaluate(() => particles.some((p) => p.shape && p.color === "#ff5252")), { timeout: 6000 })
+      .toBe(true);
+  });
+
   test("たくさん描くと変身花火（形の粒）が必ず出る", async ({ page }) => {
     await openDraw(page);
     const box = await page.locator("#fxCanvas").boundingBox();
