@@ -70,9 +70,12 @@ test("九九チャレンジ: 10問クリアでパワーアップがチャージ�
   await expect(page.locator("#challengeResult")).toBeVisible();
   await expect(page.locator("#normalResult")).toBeHidden();
   await expect(page.locator("#challengeRewardText")).toContainText("チャージしたよ");
-  // パワーアップフラグが貯まり、通常のベスト記録は作られていない
+  // パワーアップフラグが貯まり、裏で計ったタイムがベスト記録にも反映される
   expect(await page.evaluate(() => localStorage.getItem("starStrikerPowerUp"))).toBe("1");
-  expect(await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith("kuku-best-")))).toEqual([]);
+  const best = await page.evaluate(() => localStorage.getItem("kuku-best-1-10"));
+  expect(parseFloat(best)).toBeGreaterThan(0);
+  await expect(page.locator("#challengeRecordNote")).toBeVisible();
+  await expect(page.locator("#challengeRecordNote")).toContainText("ベストきろくも こうしん");
 
   // ゲームに戻る（この時点ではフラグはまだ消費されていない）
   await page.click("#toGameChallengeBtn");
@@ -106,6 +109,16 @@ test("九九チャレンジ: 10問クリアでパワーアップがチャージ�
   await page.waitForFunction(() => gameState === "PLAYING");
   expect(await page.evaluate(() => runPowered)).toBe(false);
   expect(await page.evaluate(() => player.hasShield)).toBe(false);
+
+  // もう一度ゲームオーバー→チャレンジに入ると、おすすめが2のだんに進んでいる
+  // （チャレンジのタイムがベスト記録に反映されるため、同じ段に固定されない）
+  await page.evaluate(() => damagePlayer());
+  await page.waitForFunction(() => gameState === "GAMEOVER");
+  await canvasClick(page, 0.5, 429 / 640);
+  await expect(page).toHaveURL(/\/kuku\/\?challenge=star-striker$/);
+  await page.click("#startBtn");
+  await expect(page.locator("#qDan")).toHaveText("2のだん");
+  await expect(page.locator("#statQ")).toHaveText("1 / 10");
 });
 
 test("チャージ済みフラグ: タイトルでは消費されず、開始で消費される", async ({ page }) => {
