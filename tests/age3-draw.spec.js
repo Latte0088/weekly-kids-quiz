@@ -23,7 +23,7 @@ test.describe("キラキラ はなび", () => {
     await openDraw(page);
     await page.click("#stampToggle");
     await expect(page.locator("#stampPop")).toBeVisible();
-    await expect(page.locator("#stampBtns .stamp-btn")).toHaveCount(12);
+    await expect(page.locator("#stampBtns .stamp-btn")).toHaveCount(18);
     await page.click('#stampBtns .stamp-btn[aria-label="dino"]');
     await expect(page.locator("#stampPop")).toBeHidden();
     await expect(page.locator("#stampToggle")).toHaveText("🦖");
@@ -32,6 +32,11 @@ test.describe("キラキラ はなび", () => {
     await page.click('#stampBtns .stamp-btn[aria-label="neko"]');
     await expect(page.locator("#stampPop")).toBeHidden();
     await expect(page.locator("#stampToggle")).toHaveText("🐱");
+    // 追加した果物スタンプ（りんご）も選べる
+    await page.click("#stampToggle");
+    await page.click('#stampBtns .stamp-btn[aria-label="ringo"]');
+    await expect(page.locator("#stampPop")).toBeHidden();
+    await expect(page.locator("#stampToggle")).toHaveText("🍎");
   });
 
   test("たくさん描くと変身花火（形の粒）が必ず出る", async ({ page }) => {
