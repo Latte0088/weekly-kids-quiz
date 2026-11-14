@@ -6,9 +6,9 @@
 
 ## ファイル構成
 
-- `index.html` — 目次ページ（各回へのリンクカード）
-- `assets/style.css` — 全ページ共通のデザイン
-- `assets/quiz.js` — 全ページ共通のクイズエンジン
+- `index.html` — トップの入り口ページ（「クイズ」と「九九」のドアカード）
+- `quiz/index.html` — クイズの目次ページ（最新ボタン・あそびかた・回の一覧）
+- `assets/style.css` — クイズ側の全ページ共通デザイン
+- `assets/quiz.js` — クイズ共通のエンジン
 - `quiz/quiz-001.html`、`quiz/quiz-002.html` … — 回ごとのページ（各5問）
-- `quiz/index.html` — 目次へのリダイレクトページ（古いキャッシュ対策。そのまま残す）
 - `kuku/index.html` — 九九スピードアタック（九九のタイムアタックゲーム）
