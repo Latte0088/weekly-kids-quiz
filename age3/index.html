@@ -117,6 +117,16 @@
   #nextBtn { background: #66bb6a; font-size: 1.35rem; padding: 8px 32px; margin-top: 12px; }
   .star-fx { position: absolute; font-size: 2rem; z-index: 40; pointer-events: none; animation: star-fly .8s ease-out forwards; }
   @keyframes star-fly { to { transform: translate(var(--dx), var(--dy)) scale(1.5) rotate(120deg); opacity: 0; } }
+  .progress-dots { display: flex; gap: 6px; justify-content: center; margin: 0 0 8px; flex-wrap: wrap; }
+  .pdot { width: 20px; height: 20px; border-radius: 50%; background: #e4eee4; border: 3px solid #b9d2b9; }
+  .pdot.now { border-color: #ff9800; animation: pdot-pulse .7s ease-in-out infinite alternate; }
+  @keyframes pdot-pulse { from { transform: scale(1); } to { transform: scale(1.22); } }
+  .pdot.done { background: #a5d6a7; border-color: #81c784; }
+  .pdot.perfect { background: #ffb300; border-color: #ff8f00; }
+  .stars-row { font-size: 1.9rem; letter-spacing: 2px; line-height: 1.3; text-align: center; max-width: 92vw; }
+  .animal-result .big-btn { background: #66bb6a; }
+  .drag-ghost { position: fixed; z-index: 99; font-size: 3.6rem; transform: translate(-50%, -55%); pointer-events: none; filter: drop-shadow(0 8px 8px rgba(0,0,0,.3)); }
+  .bento-cell.hover { outline: 5px solid #ffb74d; outline-offset: -5px; background: #fff0d0; }
 
   /* ---------- はなび おえかき ---------- */
   #view-draw { background: #0b1035; }
@@ -180,6 +190,7 @@
   <!-- どうぶつ かくれんぼ -->
   <section class="view" id="view-animal" hidden>
     <button type="button" class="home-btn" data-home>🏠<span class="hb-t">もどる</span></button>
+    <div class="progress-dots" id="progressDots"></div>
     <div class="scene" id="scene">
       <div class="peek" id="peek"></div>
       <div class="bush-wrap" id="bushWrap">
@@ -191,6 +202,12 @@
     <p class="animal-q">だ〜れだ？</p>
     <div class="choices" id="choices"></div>
     <button type="button" class="big-btn" id="nextBtn" hidden>つぎへ ▶</button>
+    <div class="celebrate animal-result" id="animalResult" hidden>
+      <div class="mogu-face">🎉</div>
+      <div class="stars-row" id="starsRow"></div>
+      <div class="mogu-text" id="resultText"></div>
+      <button type="button" class="big-btn" id="animalAgainBtn">🔄 もういっかい</button>
+    </div>
   </section>
 
   <!-- はなび おえかき -->
@@ -355,6 +372,7 @@ function refreshBento() {
   doneBtn.disabled = placedCount < 4 || bentoLock;
 }
 function placeFood(fi) {
+  if (justDragged) return;
   if (bentoLock || bentoCells.indexOf(fi) !== -1) return;
   var empty = bentoCells.indexOf(null);
   if (empty === -1) return;
@@ -365,6 +383,7 @@ function placeFood(fi) {
   sndPop();
 }
 function removeFood(ci) {
+  if (justDragged) return;
   if (bentoLock || bentoCells[ci] === null) return;
   ensureAudio();
   bentoCells[ci] = null;
@@ -402,6 +421,78 @@ document.getElementById("againBtn").addEventListener("click", function () {
 });
 refreshBento();
 
+/* ---------- おべんとう：ドラッグ配置 ---------- */
+var justDragged = false;
+function cellIndexFromPoint(x, y) {
+  var el = document.elementFromPoint(x, y);
+  var cell = el && el.closest ? el.closest(".bento-cell") : null;
+  if (!cell) return -1;
+  return Array.prototype.indexOf.call(bentoGrid.children, cell);
+}
+function clearCellHover() {
+  Array.prototype.forEach.call(bentoGrid.children, function (c) { c.classList.remove("hover"); });
+}
+function startDrag(e, src) {
+  if (bentoLock) return;
+  var startX = e.clientX, startY = e.clientY, moved = false, ghost = null;
+  var emoji = src.type === "tray" ? FOODS[src.fi].emoji : FOODS[bentoCells[src.ci]].emoji;
+  function onMove(ev) {
+    var dx = ev.clientX - startX, dy = ev.clientY - startY;
+    if (!moved && Math.sqrt(dx * dx + dy * dy) < 11) return;
+    if (!moved) {
+      moved = true;
+      justDragged = true;
+      ghost = document.createElement("div");
+      ghost.className = "drag-ghost";
+      ghost.textContent = emoji;
+      document.body.appendChild(ghost);
+    }
+    ghost.style.left = ev.clientX + "px";
+    ghost.style.top = ev.clientY + "px";
+    var ci = cellIndexFromPoint(ev.clientX, ev.clientY);
+    clearCellHover();
+    if (ci >= 0) bentoGrid.children[ci].classList.add("hover");
+    ev.preventDefault();
+  }
+  function onUp(ev) {
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    if (!moved) return;
+    if (ghost) ghost.remove();
+    clearCellHover();
+    var ci = cellIndexFromPoint(ev.clientX, ev.clientY);
+    if (ci >= 0) {
+      ensureAudio();
+      if (src.type === "tray") {
+        var target = bentoCells[ci] === null ? ci : bentoCells.indexOf(null);
+        if (target !== -1 && bentoCells.indexOf(src.fi) === -1) {
+          bentoCells[target] = src.fi; placedCount++; refreshBento(); sndPop();
+        }
+      } else if (ci !== src.ci) {
+        var tmp = bentoCells[ci];
+        bentoCells[ci] = bentoCells[src.ci];
+        bentoCells[src.ci] = tmp;
+        refreshBento(); sndPop();
+      }
+    }
+    setTimeout(function () { justDragged = false; }, 80);
+  }
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+}
+foodTray.addEventListener("pointerdown", function (e) {
+  var btn = e.target.closest ? e.target.closest(".food-btn") : null;
+  if (!btn || btn.classList.contains("used")) return;
+  startDrag(e, { type: "tray", fi: Array.prototype.indexOf.call(foodTray.children, btn) });
+});
+bentoGrid.addEventListener("pointerdown", function (e) {
+  var cell = e.target.closest ? e.target.closest(".bento-cell") : null;
+  if (!cell) return;
+  var ci = Array.prototype.indexOf.call(bentoGrid.children, cell);
+  if (bentoCells[ci] === null) return;
+  startDrag(e, { type: "cell", ci: ci });
+});
+
 /* ================= どうぶつ かくれんぼ ================= */
 function eyes(x1, x2, y, r) {
   return '<circle cx="' + x1 + '" cy="' + y + '" r="' + r + '" fill="#263238"/><circle cx="' + x2 + '" cy="' + y + '" r="' + r + '" fill="#263238"/>' +
@@ -434,6 +525,36 @@ var revealEl = document.getElementById("revealAnimal");
 var choicesEl = document.getElementById("choices");
 var nextBtn = document.getElementById("nextBtn");
 var curAnimal = null, lastAnimalId = "", animalTimer = null, animalLock = false;
+var SET_LEN = 10, setQ = 0, setScore = 0, qMissed = false, dotStates = [];
+var dotsEl = document.getElementById("progressDots");
+var animalResultEl = document.getElementById("animalResult");
+
+function refreshDots() {
+  dotsEl.innerHTML = "";
+  for (var i = 0; i < SET_LEN; i++) {
+    var d = document.createElement("span");
+    d.className = "pdot";
+    if (dotStates[i] === "perfect") d.classList.add("perfect");
+    else if (dotStates[i] === "done") d.classList.add("done");
+    else if (i === setQ - 1 && !animalLock) d.classList.add("now");
+    dotsEl.appendChild(d);
+  }
+}
+function startAnimalSet() {
+  setQ = 0; setScore = 0; dotStates = [];
+  animalResultEl.hidden = true;
+  newAnimalRound();
+}
+function showAnimalResult() {
+  nextBtn.hidden = true;
+  document.getElementById("starsRow").textContent = "⭐".repeat(setScore) + "☆".repeat(SET_LEN - setScore);
+  var praise = setScore >= 8 ? "すごい！" : (setScore >= 5 ? "がんばったね！" : "たのしかったね！");
+  document.getElementById("resultText").textContent = praise + " " + setScore + "もん ピッタリ！";
+  animalResultEl.hidden = false;
+  ensureAudio(); sndFanfare();
+  confettiBurst(animalResultEl);
+}
+document.getElementById("animalAgainBtn").addEventListener("click", function () { sndTap(); startAnimalSet(); });
 
 function shuffleArr(a) {
   for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; }
@@ -442,6 +563,9 @@ function shuffleArr(a) {
 function newAnimalRound() {
   clearTimeout(animalTimer);
   animalLock = false;
+  setQ++;
+  qMissed = false;
+  refreshDots();
   sceneEl.classList.remove("open");
   revealEl.hidden = true;
   revealEl.classList.remove("jump");
@@ -480,6 +604,9 @@ function pickAnimal(a, btn) {
   ensureAudio();
   if (a.id === curAnimal.id) {
     animalLock = true;
+    if (!qMissed) setScore++;
+    dotStates[setQ - 1] = qMissed ? "done" : "perfect";
+    refreshDots();
     sceneEl.classList.add("open");
     peekEl.style.opacity = "0";
     revealEl.innerHTML = curAnimal.face;
@@ -488,9 +615,13 @@ function pickAnimal(a, btn) {
     revealEl.classList.add("jump");
     sndCorrect();
     starBurst(sceneEl);
+    nextBtn.textContent = setQ >= SET_LEN ? "けっか ▶" : "つぎへ ▶";
     nextBtn.hidden = false;
-    animalTimer = setTimeout(newAnimalRound, 2800);
+    animalTimer = setTimeout(function () {
+      if (setQ >= SET_LEN) showAnimalResult(); else newAnimalRound();
+    }, 3000);
   } else {
+    qMissed = true;
     sndPoyon();
     btn.classList.remove("shake");
     void btn.offsetWidth;
@@ -506,9 +637,13 @@ bushWrapEl.addEventListener("click", function () {
   sndRustle();
   setTimeout(function () { sndAnimal(curAnimal.id); }, 240);
 });
-nextBtn.addEventListener("click", function () { sndTap(); newAnimalRound(); });
-document.querySelector('[data-goto="animal"]').addEventListener("click", newAnimalRound);
-newAnimalRound();
+nextBtn.addEventListener("click", function () {
+  sndTap();
+  if (setQ >= SET_LEN) { clearTimeout(animalTimer); showAnimalResult(); }
+  else newAnimalRound();
+});
+document.querySelector('[data-goto="animal"]').addEventListener("click", startAnimalSet);
+startAnimalSet();
 
 /* ================= はなび おえかき ================= */
 var stageEl = document.getElementById("drawStage");
