@@ -42,9 +42,10 @@ test("ゲート: ゲームオーバー→ボタンで九九へ→クリアで解
   await expect(page).toHaveURL(/\/kuku\/\?gate=star-striker$/);
   await expect(page.locator("#gateBanner")).toBeVisible();
 
-  // ゲート時はおすすめ（記録なし→1のだん・10もん）が自動選択され、段・問題数は変更できない
-  await expect(page.locator("#danGrid button").first()).toBeDisabled();
-  await expect(page.locator("#danMix")).toBeDisabled();
+  // ゲート時はおすすめ（記録なし→1のだん・10もん）が自動選択される。
+  // 段・問題数は無効化しない（選び直しは自由。解除されるのはおすすめをクリアした時だけ）
+  await expect(page.locator("#danGrid button").first()).toBeEnabled();
+  await expect(page.locator("#danMix")).toBeEnabled();
 
   // 九九を10問クリアする（式を読んでテンキーで答える）
   await page.click("#startBtn");
@@ -94,8 +95,8 @@ test("回帰: ゲームオーバー→九九→戻って通常入場し直すと
   await page.waitForFunction(() => gameState === "GAMEOVER");
   await canvasClick(page, 0.5, 451 / 640);
   await expect(page).toHaveURL(/\/kuku\/\?gate=star-striker$/);
-  // ゲート入場ではおすすめ固定になっている
-  await expect(page.locator("#danGrid button").first()).toBeDisabled();
+  // ゲート入場ではバナーが出ておすすめが自動選択される（ボタンは押せる）
+  await expect(page.locator("#danGrid button").first()).toBeEnabled();
   await expect(page.locator("#gateBanner")).toBeVisible();
 
   // 戻って（7さいトップ経由）通常の入り口から九九に入り直す
@@ -119,6 +120,24 @@ test("ゲート外: ロック記録があっても、通常入場のクリアで
   await expect(page.locator("#gateBanner")).toBeHidden();
   await expect(page.locator("#danGrid button").first()).toBeEnabled();
   await page.click("#startBtn");
+  await answerAll(page, 10);
+  await expect(page.locator("#view-result")).toBeVisible();
+  expect(await page.evaluate(() => localStorage.getItem("starStrikerKukuLock"))).toBe("1");
+});
+
+test("回帰: ゲート入場でも段を選び直せて、おすすめ以外のクリアでは解除されない", async ({ page }) => {
+  // 報告された再現手順: ゲームオーバー→九九→段を選びなおす
+  await page.addInitScript(() => localStorage.setItem("starStrikerKukuLock", "1"));
+  await page.goto("/kuku/?gate=star-striker");
+  await expect(page.locator("#gateBanner")).toBeVisible();
+  // おすすめ（記録なし→1のだん・10もん）が自動選択されている
+  await expect(page.locator("#osusumeBtn")).toContainText("1のだん・10もん");
+  // 段のボタンは押せて、3のだんに選び直せる（ロックされていない）
+  await expect(page.locator("#danGrid button").first()).toBeEnabled();
+  await page.locator("#danGrid button").nth(2).click();
+  await page.click("#startBtn");
+  await expect(page.locator("#qDan")).toHaveText("3のだん");
+  // 選び直した組み合わせを最後まで解いても、ゲームは解除されない
   await answerAll(page, 10);
   await expect(page.locator("#view-result")).toBeVisible();
   expect(await page.evaluate(() => localStorage.getItem("starStrikerKukuLock"))).toBe("1");

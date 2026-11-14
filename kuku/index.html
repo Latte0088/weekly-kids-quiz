@@ -138,7 +138,6 @@
         text-align: center; color: var(--ink-soft); font-weight: 800;
         margin: 8px 0 0; font-size: 0.98rem; min-height: 1.4em;
       }
-      .pick-btn:disabled { opacity: 0.45; cursor: default; }
       .danger-zone { margin-top: 28px; text-align: center; }
       .clear-records-btn {
         background: transparent; color: var(--ink-soft); font-weight: 700; font-size: 0.92rem;
@@ -292,6 +291,7 @@
       /* ---------- STAR STRIKER の九九ゲート ---------- */
       var GATE_KEY = "starStrikerKukuLock";
       var gateMode = false;
+      var gateTarget = null;  // ゲート入場時点のおすすめ {dan, count}。解除はこの組み合わせのクリア時のみ
       try {
         // ゲート扱いは「ゲームから九九ボタンを押して来た時」だけ。
         // ロック記録があるだけではゲートにしない（通常の入り口から入った
@@ -547,8 +547,9 @@
         document.getElementById("rPer").textContent = (total / count).toFixed(2);
         document.getElementById("rBest").textContent = best.toFixed(1);
         document.getElementById("recordBadge").hidden = !isRecord;
-        if (gateMode) {
-          // クリアで STAR STRIKER のロックを解除する。
+        if (gateMode && gateTarget && dan === gateTarget.dan && count === gateTarget.count) {
+          // ゲート入場時のおすすめをクリアした時だけ STAR STRIKER のロックを解除する。
+          // 段・問題数を選び直して別の組み合わせをクリアしても解除されない。
           // ゲームへの近道はあえて作らない（戻るには通常の導線を通る）
           try { localStorage.removeItem(GATE_KEY); } catch (e) { /* けせなくても クリアは クリア */ }
         }
@@ -657,12 +658,12 @@
         if (gateMode) applyGateSelection();
       });
 
-      /* ---------- ゲート時は おすすめを自動選択して 変更できないようにする ---------- */
+      /* ---------- ゲート時は おすすめを自動選択する（選び直しは自由） ---------- */
+      // 段・問題数は無効化しない。「選び直したらロックされたまま」という
+      // 不具合報告を受けた仕様：固定するのは解除条件（おすすめのクリア）だけ。
       function applyGateSelection() {
         applyOsusumeSelection();
-        for (var n = 1; n <= 9; n++) danButtons[n].disabled = true;
-        danMix.disabled = true;
-        countButtons.forEach(function (btn) { btn.disabled = true; });
+        gateTarget = osusume ? { dan: osusume.dan, count: osusume.count } : null;
         var banner = document.getElementById("gateBanner");
         if (osusume) {
           banner.innerHTML = "🎮 ゲームオーバー！ おすすめの " +
