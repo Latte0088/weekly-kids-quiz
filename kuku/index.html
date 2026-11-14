@@ -125,7 +125,7 @@
         width: 100%; margin-top: 12px; min-height: 60px; border: none; border-radius: 999px;
         background: var(--key); color: var(--ink); font-size: 1.15rem; font-weight: 800;
       }
-      .gate-banner {
+      .challenge-banner {
         background: #fff3cf; color: #6b5200; border: 2px solid var(--yellow);
         border-radius: 16px; padding: 12px 14px; font-weight: 800; text-align: center;
         margin: 0 0 14px; font-size: 1.02rem;
@@ -138,6 +138,27 @@
         text-align: center; color: var(--ink-soft); font-weight: 800;
         margin: 8px 0 0; font-size: 0.98rem; min-height: 1.4em;
       }
+      .challenge-info {
+        text-align: center; font-weight: 800; color: var(--ink-soft);
+        margin: 4px 0 14px; font-size: 1.02rem; line-height: 1.7;
+      }
+      .charge-row {
+        display: flex; align-items: center; justify-content: center; gap: 10px;
+        margin: 0 0 12px; min-height: 40px;
+      }
+      .charge-label { font-weight: 900; color: #b97e00; font-size: 1.02rem; }
+      .charge-bolts { font-size: 1.35rem; letter-spacing: 2px; }
+      .charge-bolt { opacity: 0.18; filter: grayscale(1); display: inline-block; transition: transform 0.15s, opacity 0.15s; }
+      .charge-bolt.lit { opacity: 1; filter: none; transform: scale(1.25); }
+      .charge-row.pulse .charge-label { animation: charge-pulse 0.45s ease; }
+      @keyframes charge-pulse { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+      .to-game-btn {
+        display: block; width: 100%; margin-top: 16px; min-height: 64px; border-radius: 999px;
+        background: linear-gradient(135deg, var(--orange), var(--yellow)); color: #241300;
+        font-size: 1.25rem; font-weight: 900; text-decoration: none; line-height: 64px;
+        box-shadow: 0 5px 0 #c25e00;
+      }
+      .to-game-btn:active { transform: translateY(4px); box-shadow: 0 1px 0 #c25e00; }
       .danger-zone { margin-top: 28px; text-align: center; }
       .clear-records-btn {
         background: transparent; color: var(--ink-soft); font-weight: 700; font-size: 0.92rem;
@@ -189,7 +210,7 @@
         </div>
         <h1 class="title"><ruby>九九<rt>くく</rt></ruby>スピードアタック</h1>
         <p class="tagline">はやく ただしく とけ！ たくさん とくほど つよいぞ！</p>
-        <p class="gate-banner" id="gateBanner" hidden>🎮 ゲームで あそぶには 九九を クリアしてね！<br />10もん か 20もんを さいごまで とくと クリアだよ（エンドレスは クリアに ならないよ）</p>
+        <p class="challenge-banner" id="challengeBanner" hidden>🚀 パワーアップ ちょうせん！</p>
 
         <section class="panel">
           <div class="sec-head">
@@ -210,6 +231,7 @@
             <button class="pick-btn" data-count="endless" type="button">エンドレス</button>
           </div>
 
+          <p class="challenge-info" id="challengeInfo" hidden>もんだいは 10もん。タイマーは ないから あせらなくて だいじょうぶ。<br />まちがえても、とけるまで おなじ もんだいが でるよ。</p>
           <button class="start-btn" id="startBtn" type="button">▶ スタート！</button>
         </section>
 
@@ -236,8 +258,13 @@
 
         <div class="status-row">
           <div class="stat"><div class="label">もんだい</div><div class="value" id="statQ">1 / 10</div></div>
-          <div class="stat"><div class="label">タイム</div><div class="value time" id="statTime">0.0<ruby>秒<rt>びょう</rt></ruby></div></div>
+          <div class="stat" id="statTimeBox"><div class="label">タイム</div><div class="value time" id="statTime">0.0<ruby>秒<rt>びょう</rt></ruby></div></div>
           <div class="stat"><div class="label">れんぞくせいかい</div><div class="value streak" id="statStreak">0</div></div>
+        </div>
+
+        <div class="charge-row" id="chargeRow" hidden>
+          <span class="charge-label" id="chargeLabel">パワーチャージ</span>
+          <span class="charge-bolts" id="chargeBolts"></span>
         </div>
 
         <section class="q-card">
@@ -271,15 +298,22 @@
         </div>
 
         <section class="result-card">
-          <h2>🎉 クリア！</h2>
-          <div class="r-label">クリアタイム</div>
-          <div class="r-time"><span id="rTime">0.0</span>びょう</div>
-          <div class="r-label" style="margin-top: 12px;">1もんあたり</div>
-          <div class="r-per"><span id="rPer">0.00</span>びょう</div>
-          <div class="r-best">ベストタイム <span id="rBest">0.0</span>びょう</div>
-          <div><span class="record-badge" id="recordBadge" hidden>🏆 NEW RECORD!</span></div>
-          <button class="again-btn" id="againBtn" type="button">もういちど！</button>
-          <button class="reselect-btn" id="reselectBtn" type="button">だんを えらびなおす</button>
+          <div id="normalResult">
+            <h2>🎉 クリア！</h2>
+            <div class="r-label">クリアタイム</div>
+            <div class="r-time"><span id="rTime">0.0</span>びょう</div>
+            <div class="r-label" style="margin-top: 12px;">1もんあたり</div>
+            <div class="r-per"><span id="rPer">0.00</span>びょう</div>
+            <div class="r-best">ベストタイム <span id="rBest">0.0</span>びょう</div>
+            <div><span class="record-badge" id="recordBadge" hidden>🏆 NEW RECORD!</span></div>
+            <button class="again-btn" id="againBtn" type="button">もういちど！</button>
+            <button class="reselect-btn" id="reselectBtn" type="button">だんを えらびなおす</button>
+          </div>
+          <div id="challengeResult" hidden>
+            <h2>⚡ パワーアップ かんりょう！</h2>
+            <p id="challengeRewardText" style="font-weight: 800; line-height: 1.8;">パワーレベルが あがったよ！</p>
+            <a class="to-game-btn" id="toGameChallengeBtn" href="../games/star-striker/">🚀 ゲームに もどる</a>
+          </div>
         </section>
       </main>
 
@@ -288,18 +322,29 @@
     <script>
       "use strict";
 
-      /* ---------- STAR STRIKER の九九ゲート ---------- */
-      var GATE_KEY = "starStrikerKukuLock";
-      var gateMode = false;
-      var gateTarget = null;  // ゲート入場時点のおすすめ {dan, count}。解除はこの組み合わせのクリア時のみ
+      /* ---------- STAR STRIKER の九九チャレンジ（ご褒美方式） ---------- */
+      // ゲームから来た時は「パワーアップチャレンジ」になる：おすすめの段・
+      // 10問固定・タイマーなし・記録なし。正解でチャージが貯まり、クリアで
+      // ゲーム側のパワーレベル（starStrikerPowerLevel、最大3）が1上がる。
+      var POWER_LEVEL_KEY = "starStrikerPowerLevel";
+      var CHALLENGE_COUNT = 10;
+      var challengeMode = false;
+      var chargeCount = 0;
       try {
-        // ゲート扱いは「ゲームから九九ボタンを押して来た時」だけ。
-        // ロック記録があるだけではゲートにしない（通常の入り口から入った
-        // 九九がおすすめ固定のままになる不具合の再発防止）
-        gateMode = new URLSearchParams(location.search).get("gate") === "star-striker";
+        challengeMode = new URLSearchParams(location.search).get("challenge") === "star-striker";
       } catch (e) { /* よめなくても ふつうに あそべる */ }
-      if (gateMode) {
-        document.getElementById("gateBanner").hidden = false;
+
+      function loadPowerLevel() {
+        try {
+          var v = parseInt(localStorage.getItem(POWER_LEVEL_KEY) || "0", 10);
+          return isNaN(v) ? 0 : Math.max(0, Math.min(3, v));
+        } catch (e) { return 0; }
+      }
+
+      function rewardTextFor(level) {
+        if (level === 1) return "パワーレベル 1に あがった！ ゲームで ツインレーザーが つかえるよ！";
+        if (level === 2) return "パワーレベル 2に あがった！ ゲームで 3WAYショットと アイテムマグネットが つかえるよ！";
+        return "パワーレベル 3（MAX）に あがった！ ゲームで つよい たま＋シールドで スタートできるよ！";
       }
 
       /* ---------- 設定 ---------- */
@@ -531,11 +576,27 @@
         viewResult.hidden = true;
         viewGame.hidden = false;
         nextQuestion();
-        startTimer();
+        if (challengeMode) { chargeCount = 0; updateCharge(); }
+        else startTimer();
         window.scrollTo({ top: 0 });
       }
 
       function finishGame(elapsed) {
+        if (challengeMode) {
+          // チャレンジのクリア: 記録は残さず、ゲームのパワーレベルを1上げる
+          var before = loadPowerLevel();
+          var newLevel = Math.min(3, before + 1);
+          try { localStorage.setItem(POWER_LEVEL_KEY, String(newLevel)); } catch (e) { /* ほぞんできなくても すすむ */ }
+          document.getElementById("challengeRewardText").textContent =
+            before >= 3 ? "パワーレベルは MAX（3）だよ！ チャレンジ ありがとう！" : rewardTextFor(newLevel);
+          document.getElementById("normalResult").hidden = true;
+          document.getElementById("challengeResult").hidden = false;
+          viewGame.hidden = true;
+          viewResult.hidden = false;
+          soundClear();
+          window.scrollTo({ top: 0 });
+          return;
+        }
         var total = Math.round(elapsed * 10) / 10;
         var prev = loadBest();
         var isRecord = prev === null || total < prev;
@@ -547,12 +608,6 @@
         document.getElementById("rPer").textContent = (total / count).toFixed(2);
         document.getElementById("rBest").textContent = best.toFixed(1);
         document.getElementById("recordBadge").hidden = !isRecord;
-        if (gateMode && gateTarget && dan === gateTarget.dan && count === gateTarget.count) {
-          // ゲート入場時のおすすめをクリアした時だけ STAR STRIKER のロックを解除する。
-          // 段・問題数を選び直して別の組み合わせをクリアしても解除されない。
-          // ゲームへの近道はあえて作らない（戻るには通常の導線を通る）
-          try { localStorage.removeItem(GATE_KEY); } catch (e) { /* けせなくても クリアは クリア */ }
-        }
         viewGame.hidden = true;
         viewResult.hidden = false;
         soundClear();
@@ -572,6 +627,7 @@
           showJudge(true);
           streak++;
           soundCorrect();
+          if (challengeMode) { chargeCount++; updateCharge(); }
           if (count !== Infinity && qIndex >= count) {
             finishGame(stopTimer());
             return;
@@ -655,26 +711,54 @@
         clearConfirm.hidden = true;
         clearDone.hidden = false;
         refreshSelection();
-        if (gateMode) applyGateSelection();
       });
 
-      /* ---------- ゲート時は おすすめを自動選択する（選び直しは自由） ---------- */
-      // 段・問題数は無効化しない。「選び直したらロックされたまま」という
-      // 不具合報告を受けた仕様：固定するのは解除条件（おすすめのクリア）だけ。
-      function applyGateSelection() {
-        applyOsusumeSelection();
-        gateTarget = osusume ? { dan: osusume.dan, count: osusume.count } : null;
-        var banner = document.getElementById("gateBanner");
-        if (osusume) {
-          banner.innerHTML = "🎮 ゲームオーバー！ おすすめの " +
-            danLabel(osusume.dan) + "・" + osusume.count +
-            "もんを さいごまで とくと、また ゲームで あそべるよ";
+      /* ---------- チャージ演出（チャレンジモードの正解フィードバック） ---------- */
+      function updateCharge() {
+        var html = "";
+        for (var i = 0; i < CHALLENGE_COUNT; i++) {
+          html += '<span class="charge-bolt' + (i < chargeCount ? " lit" : "") + '">⚡</span>';
         }
+        document.getElementById("chargeBolts").innerHTML = html;
+        document.getElementById("chargeLabel").textContent =
+          chargeCount >= CHALLENGE_COUNT ? "フルチャージ！" :
+          (chargeCount > 0 ? "パワーチャージ中！" : "パワーチャージ");
+        var row = document.getElementById("chargeRow");
+        row.classList.remove("pulse");
+        void row.offsetWidth;
+        if (chargeCount > 0) row.classList.add("pulse");
+      }
+
+      /* ---------- チャレンジモードの準備（おすすめの段・10問・タイマーなし） ---------- */
+      function applyChallengeSetup() {
+        applyOsusumeSelection();
+        count = CHALLENGE_COUNT;
+        var banner = document.getElementById("challengeBanner");
+        if (osusume) {
+          banner.innerHTML = "🚀 パワーアップ ちょうせん！ おすすめの " +
+            danLabel(osusume.dan) + "・" + CHALLENGE_COUNT +
+            "もんを とくと、ゲームの パワーレベルが あがるよ ⚡";
+        }
+        banner.hidden = false;
+        document.getElementById("challengeInfo").hidden = false;
+        // 選択UIは隠す（チャレンジはおすすめの段でそのまま始める）
+        document.querySelectorAll(".sec-head").forEach(function (el) { el.hidden = true; });
+        document.getElementById("danGrid").hidden = true;
+        document.getElementById("danMix").hidden = true;
+        document.getElementById("osusumeBtn").hidden = true;
+        document.getElementById("osusumeNote").hidden = true;
+        document.getElementById("countRow").hidden = true;
+        document.querySelector(".danger-zone").hidden = true;
+        document.getElementById("startBtn").textContent = "⚡ ちょうせん スタート！";
+        document.getElementById("statTimeBox").hidden = true;
+        document.getElementById("chargeRow").hidden = false;
+        chargeCount = 0;
+        updateCharge();
       }
 
       refreshSelection();
       syncSoundButtons();
-      if (gateMode) applyGateSelection();
+      if (challengeMode) applyChallengeSetup();
     </script>
   </body>
 </html>
