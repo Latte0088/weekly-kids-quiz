@@ -158,13 +158,7 @@
         background: var(--key); color: var(--ink); font-size: 1.05rem; font-weight: 800;
       }
       .clear-done { color: var(--green); font-weight: 800; margin: 10px 0 0; }
-      .game-btn {
-        display: flex; align-items: center; justify-content: center;
-        width: 100%; margin-top: 12px; min-height: 68px; border-radius: 999px;
-        background: var(--orange); color: #fff; font-size: 1.35rem; font-weight: 800;
-        text-decoration: none; box-shadow: 0 6px 0 #c25e00;
-      }
-      .game-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 #c25e00; }
+
         #view-game { position: relative; }
     .judge-fx {
       position: absolute; left: calc(50% - 105px); top: calc(50% - 105px); z-index: 30; pointer-events: none;
@@ -287,7 +281,6 @@
           <div><span class="record-badge" id="recordBadge" hidden>🏆 NEW RECORD!</span></div>
           <button class="again-btn" id="againBtn" type="button">もういちど！</button>
           <button class="reselect-btn" id="reselectBtn" type="button">だんを えらびなおす</button>
-          <a class="game-btn" id="toGameBtn" href="../games/star-striker/" hidden>🎮 ゲームに もどる</a>
         </section>
       </main>
 
@@ -300,8 +293,10 @@
       var GATE_KEY = "starStrikerKukuLock";
       var gateMode = false;
       try {
-        gateMode = localStorage.getItem(GATE_KEY) === "1" ||
-          new URLSearchParams(location.search).get("gate") === "star-striker";
+        // ゲート扱いは「ゲームから九九ボタンを押して来た時」だけ。
+        // ロック記録があるだけではゲートにしない（通常の入り口から入った
+        // 九九がおすすめ固定のままになる不具合の再発防止）
+        gateMode = new URLSearchParams(location.search).get("gate") === "star-striker";
       } catch (e) { /* よめなくても ふつうに あそべる */ }
       if (gateMode) {
         document.getElementById("gateBanner").hidden = false;
@@ -553,9 +548,9 @@
         document.getElementById("rBest").textContent = best.toFixed(1);
         document.getElementById("recordBadge").hidden = !isRecord;
         if (gateMode) {
-          // クリアで STAR STRIKER のロックを解除し、ゲームへ戻るボタンを出す
-          try { localStorage.removeItem(GATE_KEY); } catch (e) { /* けせなくても ボタンは だす */ }
-          document.getElementById("toGameBtn").hidden = false;
+          // クリアで STAR STRIKER のロックを解除する。
+          // ゲームへの近道はあえて作らない（戻るには通常の導線を通る）
+          try { localStorage.removeItem(GATE_KEY); } catch (e) { /* けせなくても クリアは クリア */ }
         }
         viewGame.hidden = true;
         viewResult.hidden = false;
