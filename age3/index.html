@@ -659,7 +659,7 @@ var STAMPS = [
 var curColor = COLORS[0].c, curStamp = "star";
 var stampCount = 0, drawingNow = false, lastPt = null, lastSoundAt = 0;
 var particles = [], skyStars = [];
-var launchPhase = "", launchStart = 0, burstStart = 0;
+var launchPhase = "", launchStart = 0, burstStart = 0, launchPower = 0, pendingBursts = [];
 
 var colorBtnsEl = document.getElementById("colorBtns");
 COLORS.forEach(function (col, i) {
@@ -794,18 +794,20 @@ document.getElementById("trashBtn").addEventListener("click", function () {
 document.getElementById("launchBtn").addEventListener("click", function () {
   if (launchPhase) return;
   ensureAudio();
+  launchPower = stampCount;
   launchPhase = "rise";
   launchStart = performance.now();
   sndWhoosh();
 });
-function spawnBurst(cx, cy) {
+function spawnBurst(cx, cy, n, spdMul) {
   var hues = ["#ff5252", "#ffd740", "#40c4ff", "#ff80ab", "#b2ff59", "#ff9f43", "#c39bff"];
-  for (var i = 0; i < 140; i++) {
+  for (var i = 0; i < n; i++) {
     var a = Math.random() * Math.PI * 2;
-    var sp = Math.random() * 5.2 + 1.2;
+    var sp = (Math.random() * 5.2 + 1.2) * spdMul;
     particles.push({ x: cx, y: cy, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, decay: 0.008 + Math.random() * 0.012, size: Math.random() * 3 + 1.4, color: hues[i % hues.length], grav: 0.035 });
   }
 }
+function sndMiniBoom() { noiseHit(0, 0.5, 320, 0.5); tone(105, 0, 0.5, "sine", 0.4, 40); }
 function fxLoop(ts) {
   requestAnimationFrame(fxLoop);
   if (views.draw.hidden) return;
@@ -837,14 +839,32 @@ function fxLoop(ts) {
     spawnSparkles(cx + (Math.random() - 0.5) * 16, iy + ih / 2 + 12, "#ffd54f", 2);
     if (p >= 1) {
       sndBoom();
-      spawnBurst(cx, cy);
+      var burstCount = launchPower <= 0 ? 1 : Math.min(4, 1 + Math.floor(launchPower / 12));
+      var pN = 80 + Math.min(110, launchPower * 2);
+      var pSpd = 1 + Math.min(0.9, launchPower / 55);
+      spawnBurst(cx, cy, pN, pSpd);
+      var offs = [
+        { dx: -0.20, dy: -0.05, delay: 210 }, { dx: 0.20, dy: -0.02, delay: 400 }, { dx: 0, dy: -0.15, delay: 590 }
+      ];
+      for (var bi = 1; bi < burstCount; bi++) {
+        var o = offs[(bi - 1) % offs.length];
+        pendingBursts.push({ at: ts + o.delay, x: cx + w * o.dx, y: cy + h * o.dy, n: Math.round(pN * 0.8), spd: pSpd });
+      }
       artX.clearRect(0, 0, w, h);
       stampCount = 0;
       launchPhase = "burst";
       burstStart = ts;
     }
-  } else if (launchPhase === "burst" && ts - burstStart > 1900) {
+  } else if (launchPhase === "burst" && ts - burstStart > 2600) {
     launchPhase = "";
+  }
+  if (pendingBursts.length) {
+    var remain = [];
+    pendingBursts.forEach(function (b) {
+      if (ts >= b.at) { spawnBurst(b.x, b.y, b.n, b.spd); sndMiniBoom(); }
+      else remain.push(b);
+    });
+    pendingBursts = remain;
   }
   /* パーティクル */
   particles = particles.filter(function (pt) { return pt.life > 0; });
