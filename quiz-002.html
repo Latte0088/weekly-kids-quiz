@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>だい2かい クイズ | 小学2年生の家庭学習教材</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="assets/style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+
+      <main id="view-quiz">
+        <div class="quiz-top">
+          <button class="back-btn" id="backHome" type="button">← もくじへ もどる</button>
+          <div class="progress-box">
+            <span class="qcount" id="qCount"></span>
+            <span class="stars" id="progressStars" aria-label="あつめた ほし"></span>
+          </div>
+        </div>
+
+        <section class="question-card" id="questionCard">
+          <span class="cat-chip" id="catChip"></span>
+          <div class="q-illust" id="qIllust" aria-hidden="true"></div>
+          <p class="q-text" id="qText"></p>
+          <p class="q-sub" id="qSub"></p>
+          <div class="choices" id="choices"></div>
+
+          <div class="feedback try" id="feedbackTry" hidden>
+            <p class="big">おしい！😮</p>
+            <p id="hintText"></p>
+          </div>
+
+          <div id="correctArea" hidden>
+            <div class="feedback good">
+              <p class="big" id="praiseText">ピンポーン！すごい！🎉</p>
+              <p>やったね！<ruby>正解<rt>せいかい</rt></ruby>だよ。</p>
+            </div>
+            <div class="fact-box">
+              <p class="fact-head">💡 へぇ〜！まめちしき</p>
+              <p id="factText"></p>
+            </div>
+            <button class="next-btn" id="nextBtn" type="button"></button>
+          </div>
+        </section>
+      </main>
+
+      <main id="view-result" hidden>
+        <section class="result-card" id="resultCard">
+          <div class="medal-wrap">
+            <svg width="150" height="170" viewBox="0 0 150 170" role="img" aria-label="メダルの イラスト">
+              <path d="M52 0 L75 52 L62 60 L38 8 Z" fill="#ff6b4a"/>
+              <path d="M98 0 L75 52 L88 60 L112 8 Z" fill="#3d9bff"/>
+              <circle id="medalCircle" cx="75" cy="105" r="52" fill="#f5a623"/>
+              <circle cx="75" cy="105" r="42" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="5 7" opacity="0.85"/>
+              <path d="M75 76 L84 96 L105 97 L89 110 L94 131 L75 119 L56 131 L61 110 L45 97 L66 96 Z" fill="#ffffff"/>
+            </svg>
+          </div>
+          <h2>クイズ クリア！🎉</h2>
+          <div class="result-stars" id="resultStars"></div>
+          <p class="result-msg" id="medalName"></p>
+          <p class="result-msg" id="resultMsg"></p>
+          <div class="result-btns">
+            <button class="again-btn" id="againBtn" type="button">🔁 もういちど あそぶ</button>
+            <button class="home-btn" id="resultHomeBtn" type="button">📚 もくじへ もどる</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      var QUIZ_DATA = [
+        {
+          cat: "🍰 ケーキ さんすう",
+          catClass: "c1",
+          illust: "🍰",
+          q: "ケーキが 8こ あります。4にんで おなじ かずずつ わけると、1にんは なんこでしょう？",
+          sub: "8こを 4にんで わけるよ。みんな おなじ かずに なるかな？",
+          choices: [
+            { t: "1こ", ok: false },
+            { t: "2こ", ok: true },
+            { t: "3こ", ok: false },
+            { t: "4こ", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：8を 4で わけて みよう。",
+          fact: "8 ÷ 4 = 2。みんな なかよく 2こずつ だね！おなじ かずずつ わける ことを かんがえるのが「わりざん」の スタートだよ。ケンカに ならない わけかただね！"
+        },
+        {
+          cat: "🎳 ボウリング さんすう",
+          catClass: "c2",
+          illust: "🎳",
+          q: "ボウリングの ピンは ぜんぶで 10<ruby>本<rt>ぼん</rt></ruby>。1かいめに 3<ruby>本<rt>ぼん</rt></ruby> たおれました。のこりは なん<ruby>本<rt>ぼん</rt></ruby>でしょう？",
+          sub: "たおれた 3<ruby>本<rt>ぼん</rt></ruby>を のこりから ひいて みよう。",
+          choices: [
+            { t: "5<ruby>本<rt>ぼん</rt></ruby>", ok: false },
+            { t: "6<ruby>本<rt>ぼん</rt></ruby>", ok: false },
+            { t: "7<ruby>本<rt>ぼん</rt></ruby>", ok: true },
+            { t: "8<ruby>本<rt>ぼん</rt></ruby>", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：10から 3を ひいて みよう。",
+          fact: "10 − 3 = 7。あと 7<ruby>本<rt>ぼん</rt></ruby>！ストライクを めざして がんばろう！ボウリングの ピンは、ほんとうは ぜんぶで 10<ruby>本<rt>ぼん</rt></ruby>。ぜんぶ たおすと ストライクだよ！"
+        },
+        {
+          cat: "🔤 しりとり クイズ",
+          catClass: "c3",
+          illust: "🍎",
+          q: "しりとり クイズ！「りんご」の つぎに つなげられる ことばは どれでしょう？",
+          sub: "まえの ことばの さいごの おとから はじまる ことばを えらぼう。",
+          choices: [
+            { t: "ごりら", ok: true },
+            { t: "さくら", ok: false },
+            { t: "りす", ok: false },
+            { t: "かめ", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：「りんご」の さいごの おとは「ご」だよ。「ご」から はじまる ことばは どれ かな？",
+          fact: "しりとりは、まえの ことばの さいごの おとから はじまる ことばを つなげる あそびだよ。「ご」から はじまるのは「ごりら」！つぎは「ら」から はじまる ことばだね。"
+        },
+        {
+          cat: "🐙 いきもの ざつがく",
+          catClass: "c4",
+          illust: "🐙",
+          q: "タコの しんぞうは なんこ あるでしょう？",
+          sub: "にんげんの しんぞうは 1こ だよ。",
+          choices: [
+            { t: "1こ", ok: false },
+            { t: "2こ", ok: false },
+            { t: "3こ", ok: true },
+            { t: "4こ", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：にんげんより おおいよ。びっくりする かずだよ！",
+          fact: "タコの しんぞうは 3つ！2つは えらに <ruby>血<rt>ち</rt></ruby>を おくり、1つは からだ ぜんたいに おくるよ。タコの <ruby>血<rt>ち</rt></ruby>は あおい いろを しているんだって。へぇ〜！"
+        },
+        {
+          cat: "🎅 なぞなぞ",
+          catClass: "c5",
+          illust: "🎅",
+          q: "なぞなぞです。よるに そらを とび、トナカイの そりに のって プレゼントを とどけるのは だれでしょう？",
+          sub: "おとなも いっしょに かんがえて みてね。",
+          choices: [
+            { t: "サンタクロース", ok: true },
+            { t: "ゆきだるま", ok: false },
+            { t: "トナカイ", ok: false },
+            { t: "くつした", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：あかい ふくを きているよ。クリスマスに やって くるよ。",
+          fact: "サンタクロースは、クリスマスの よるに せかいじゅうの こどもたちに プレゼントを とどけるよ！トナカイが ひく そりで、そらを とんで やって くるんだって！"
+        }
+      ];
+    </script>
+    <script src="assets/quiz.js"></script>
+  </body>
+</html>
