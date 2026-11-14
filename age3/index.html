@@ -189,6 +189,13 @@
     display: flex; align-items: center; justify-content: center; font-family: inherit;
   }
   .stamp-btn.sel { border-color: #fff; background: #2c357a; }
+  .stamp-toggle { width: auto; min-width: 78px; padding: 0 14px; }
+  .stamp-pop { position: absolute; left: 0; right: 0; bottom: 0; z-index: 30; background: rgba(14,17,48,.97); border-radius: 26px 26px 0 0; padding: 18px 14px calc(18px + env(safe-area-inset-bottom)); box-shadow: 0 -8px 30px rgba(0,0,0,.5); }
+  .stamp-pop[hidden] { display: none !important; }
+  .stamp-pop-title { text-align: center; color: #dbe4ff; font-weight: 800; font-size: 1.15rem; margin-bottom: 14px; }
+  .stamp-pop-grid { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+  .stamp-pop-grid .stamp-btn { width: 72px; height: 72px; font-size: 2.1rem; }
+  .stamp-pop-close { display: block; margin: 16px auto 0; min-height: 64px; padding: 6px 30px; border-radius: 999px; border: 4px solid #3a4176; background: #1c2250; color: #fff; font-family: inherit; font-size: 1.15rem; font-weight: 800; cursor: pointer; }
   #trashBtn { color: #cfd8dc; }
   #launchBtn { background: linear-gradient(180deg, #ff8a50, #ff5252); font-size: 1.4rem; padding: 8px 26px; }
   .draw-home { background: rgba(255,255,255,.92); }
@@ -272,9 +279,14 @@
     </div>
     <div class="draw-bar">
       <span id="colorBtns"></span>
-      <span id="stampBtns"></span>
+      <button type="button" class="stamp-btn stamp-toggle" id="stampToggle" aria-label="スタンプをえらぶ">★</button>
       <button type="button" class="stamp-btn" id="trashBtn" aria-label="けす">🗑️</button>
       <button type="button" class="big-btn" id="launchBtn">🚀 うちあげ！</button>
+    </div>
+    <div class="stamp-pop" id="stampPop" hidden>
+      <div class="stamp-pop-title">スタンプを えらんでね</div>
+      <div class="stamp-pop-grid" id="stampBtns"></div>
+      <button type="button" class="stamp-pop-close" id="stampPopClose">✕ とじる</button>
     </div>
   </section>
 
@@ -974,6 +986,10 @@ COLORS.forEach(function (col, i) {
   colorBtnsEl.appendChild(b);
 });
 var stampBtnsEl = document.getElementById("stampBtns");
+var stampPopEl = document.getElementById("stampPop");
+var stampToggleEl = document.getElementById("stampToggle");
+stampToggleEl.addEventListener("click", function () { ensureAudio(); sndTap(); stampPopEl.hidden = false; });
+document.getElementById("stampPopClose").addEventListener("click", function () { sndTap(); stampPopEl.hidden = true; });
 STAMPS.forEach(function (st, i) {
   var b = document.createElement("button");
   b.type = "button";
@@ -985,6 +1001,8 @@ STAMPS.forEach(function (st, i) {
     curStamp = st.id;
     stampBtnsEl.querySelectorAll(".stamp-btn").forEach(function (x) { x.classList.remove("sel"); });
     b.classList.add("sel");
+    stampToggleEl.textContent = st.label;
+    stampPopEl.hidden = true;
   });
   stampBtnsEl.appendChild(b);
 });
@@ -1116,6 +1134,7 @@ function ptrPos(e) {
   return { x: e.clientX - r.left, y: e.clientY - r.top };
 }
 fxC.addEventListener("pointerdown", function (e) {
+  stampPopEl.hidden = true;
   if (launchPhase) return;
   ensureAudio();
   drawingNow = true;
@@ -1178,7 +1197,7 @@ var SHAPES = {
 function spawnShapeBurst(cx, cy, key, R) {
   var sh = SHAPES[key];
   sh.pts.forEach(function (pt) {
-    particles.push({ shape: true, sx: cx, sy: cy, x: cx, y: cy, tx: cx + pt[0] * R, ty: cy + pt[1] * R, born: performance.now(), travel: 480, life: 1, decay: 0.010, size: 3.2, color: sh.color, grav: 0, vx: 0, vy: 0 });
+    particles.push({ shape: true, sx: cx, sy: cy, x: cx, y: cy, tx: cx + pt[0] * R, ty: cy + pt[1] * R, born: performance.now(), travel: 420, life: 1, decay: 0.007, size: 3.2, color: sh.color, grav: 0, vx: 0, vy: 0 });
   });
 }
 function fxLoop(ts) {
@@ -1223,7 +1242,7 @@ function fxLoop(ts) {
         var o = offs[(bi - 1) % offs.length];
         pendingBursts.push({ at: ts + o.delay, x: cx + w * o.dx, y: cy + h * o.dy, n: Math.round(pN * 0.8), spd: pSpd });
       }
-      if (Math.random() < 0.45) {
+      if (launchPower >= 30 || Math.random() < 0.55) {
         var shapeKeys = Object.keys(SHAPES);
         pendingBursts.push({ at: ts + 430, x: cx, y: cy - h * 0.03, shape: shapeKeys[Math.floor(Math.random() * shapeKeys.length)], R: 85 + Math.min(55, launchPower) });
       }
