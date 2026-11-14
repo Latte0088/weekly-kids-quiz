@@ -250,38 +250,44 @@ function playWarningSound() {
 let gameState = 'TITLE'; // 'TITLE' | 'PLAYING' | 'GAMEOVER'
 
 // ==========================================
-// 九九ゲート（ゲームオーバーでロック → 九九クリアで解除）
+// 九九チャレンジ連動（クリアでパワーアップ。ロックはしない）
+// ゲームオーバーでは「九九で復活」か「そのまま再挑戦」を自分で選べる。
+// 九九が「罰」ではなく「ご褒美（パワーアップ）」になるための仕組み。
 // ==========================================
-const KUKU_LOCK_KEY = 'starStrikerKukuLock';
-let lockMemory = false;
+const POWER_LEVEL_KEY = 'starStrikerPowerLevel';
 
-function isKukuLocked() {
-  try { return lockMemory || localStorage.getItem(KUKU_LOCK_KEY) === '1'; }
-  catch (e) { return lockMemory; }
+// 九九チャレンジのクリア回数で貯まるパワーレベル（永続・最大3）
+// Lv1: ツインレーザー / Lv2: 3WAY + アイテムマグネット / Lv3: 強い弾 + シールド開始
+function loadPowerLevel() {
+  try {
+    const v = parseInt(localStorage.getItem(POWER_LEVEL_KEY) || '0', 10);
+    return isNaN(v) ? 0 : Math.max(0, Math.min(3, v));
+  } catch (e) { return 0; }
+}
+let powerLevel = loadPowerLevel();
+
+function nextRewardText() {
+  if (powerLevel <= 0) return '⚡ ツインレーザーが てにはいる！';
+  if (powerLevel === 1) return '⚡ 3WAY＋マグネットが てにはいる！';
+  if (powerLevel === 2) return '⚡ つよい たま＋シールドが てにはいる！';
+  return '⚡ パワーレベル MAX！';
 }
 
-function setKukuLock() {
-  lockMemory = true;
-  try { localStorage.setItem(KUKU_LOCK_KEY, '1'); } catch (e) { /* 保存できなくても、この画面ではロックする */ }
+function goToKukuChallenge() {
+  location.href = '../../kuku/?challenge=star-striker';
 }
 
-function goToKuku() {
-  location.href = '../../kuku/?gate=star-striker';
-}
+// ゲームオーバー画面の2つのボタン
+function challengeBtnRect() { return { x: 30, y: 392, w: 300, h: 74 }; }
+function retryBtnRect() { return { x: 60, y: 482, w: 240, h: 46 }; }
 
-function kukuBtnRect() {
-  return gameState === 'GAMEOVER'
-    ? { x: 45, y: 424, w: 270, h: 54 }
-    : { x: 45, y: 388, w: 270, h: 54 };
-}
-
-function isInsideKukuButton(x, y) {
-  const r = kukuBtnRect();
+function isInsideRect(x, y, r) {
   return x >= r.x - 6 && x <= r.x + r.w + 6 && y >= r.y - 6 && y <= r.y + r.h + 6;
 }
 
-function drawKukuButton() {
-  const r = kukuBtnRect();
+function drawChallengeButtons() {
+  // A: 九九チャレンジで復活（メイン・強調）
+  const r = challengeBtnRect();
   const pulseScale = 1 + Math.sin(frameCount * 0.1) * 0.03;
   ctx.save();
   ctx.translate(r.x + r.w / 2, r.y + r.h / 2);
@@ -294,10 +300,31 @@ function drawKukuButton() {
   ctx.roundRect(-r.w / 2, -r.h / 2, r.w, r.h, 27);
   ctx.fill();
   ctx.fillStyle = '#241300';
-  ctx.font = 'bold 20px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('✖️ 九九に いく ▶', 0, 1);
+  ctx.font = 'bold 15px sans-serif';
+  ctx.fillText('✖️ 九九を 10もん といて', 0, -23);
+  ctx.fillText('パワーアップ スタート！🚀', 0, 0);
+  ctx.font = 'bold 11px sans-serif';
+  ctx.fillText(nextRewardText(), 0, 21);
+  ctx.restore();
+
+  // B: そのまま もういちど（サブ・逃げ道）
+  const b = retryBtnRect();
+  ctx.save();
+  ctx.translate(b.x + b.w / 2, b.y + b.h / 2);
+  ctx.fillStyle = 'rgba(0, 60, 120, 0.85)';
+  ctx.strokeStyle = '#55aaff';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(-b.w / 2, -b.h / 2, b.w, b.h, 23);
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#cfe8ff';
+  ctx.font = 'bold 15px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('🔄 そのまま もういちど あそぶ', 0, 1);
   ctx.restore();
 }
 
@@ -311,6 +338,7 @@ const COMBO_MAX_TIME = 130;
 
 let nextBossScore = 500;
 let bossLevel = 0;
+let stageClearTimer = 0;
 let warningTimer = 0;
 let boss = null;
 
@@ -393,16 +421,13 @@ function handleStart(x, y) {
   initAudio();
 
   if (gameState === 'GAMEOVER') {
-    // ゲームオーバー後は九九クリアまで再開できない。ボタンで九九へ遷移する
-    if (isInsideKukuButton(x, y)) goToKuku();
+    // 2つの選択肢から自分で選ぶ: 九九チャレンジで復活 / そのまま再挑戦
+    if (isInsideRect(x, y, challengeBtnRect())) { goToKukuChallenge(); return; }
+    if (isInsideRect(x, y, retryBtnRect())) { startGame(x, y); return; }
     return;
   }
 
   if (gameState === 'TITLE') {
-    if (isKukuLocked()) {
-      if (isInsideKukuButton(x, y)) goToKuku();
-      return;
-    }
     startGame(x, y);
     return;
   }
@@ -448,6 +473,7 @@ function startGame(touchX, touchY) {
   comboTimer = 0;
   nextBossScore = 500;
   bossLevel = 0;
+  stageClearTimer = 0;
   warningTimer = 0;
   boss = null;
   bgmStep = 0;
@@ -463,6 +489,13 @@ function startGame(touchX, touchY) {
   player.powerTimer = 0;
   player.hasShield = false;
   player.invincibleTimer = 0;
+  // 九九チャレンジで貯めたパワーレベルを反映（Lv3はシールド付きでスタート）
+  powerLevel = loadPowerLevel();
+  if (powerLevel >= 3) player.hasShield = true;
+  if (powerLevel >= 1) {
+    player.invincibleTimer = 120;
+    addFloatingText(player.x, Math.max(60, player.y - 44), `POWER Lv${powerLevel}!`, '#ffd21f');
+  }
   isTouching = true;
   playPowerUpSound(false);
 }
@@ -486,6 +519,34 @@ function createExplosion(x, y, color, count = 14, speedScale = 1) {
 
 function addFloatingText(x, y, text, color = '#fff') {
   floatingTexts.push({ x, y, text, color, life: 1.0 });
+}
+
+// ==========================================
+// 難易度スケーリング（ボスを倒すごとに少しずつ強く・多く・アイテムも増える）
+// 後半ほど敵が手強くなる分、九九チャレンジのパワーアップ
+// （シールド + 3WAY）の価値が上がっていく設計。
+// ==========================================
+function spawnIntervalFrames() {
+  return Math.max(12, 42 - Math.floor(score / 150) - bossLevel * 2);
+}
+function enemySpeedScale() {
+  return 1 + Math.min(0.5, bossLevel * 0.07);
+}
+function enemyHpFor(type) {
+  if (type === 'heavy') return 4 + Math.min(3, Math.floor(bossLevel / 2));
+  if (type === 'spinner') return 2 + Math.min(2, Math.floor(bossLevel / 3));
+  return 1;
+}
+function enemyTypeRates() {
+  return {
+    heavy: Math.min(0.32, 0.22 + bossLevel * 0.02),
+    spinnerBelow: Math.min(0.60, 0.48 + bossLevel * 0.02)
+  };
+}
+function dropChanceFor(type) {
+  if (type === 'heavy') return 1;
+  if (type === 'spinner') return Math.min(0.35, 0.2 + bossLevel * 0.03);
+  return Math.min(0.2, 0.1 + bossLevel * 0.02);
 }
 
 function spawnItem(x, y, forcedType = null) {
@@ -521,7 +582,6 @@ function damagePlayer() {
     addFloatingText(player.x, player.y - 25, 'GUARD!', '#44ccff');
   } else {
     gameState = 'GAMEOVER';
-    setKukuLock();
     isTouching = false;
     playExplosionSound(true);
     createExplosion(player.x, player.y, '#44aaff', 36, 1.5);
@@ -843,12 +903,12 @@ function update() {
     const hoverY = 305 + Math.sin(frameCount * 0.06) * 8;
     drawPlayer(canvas.width / 2, hoverY);
 
-    if (isKukuLocked()) {
-      ctx.fillStyle = '#ffcc00';
+    if (powerLevel > 0) {
+      ctx.fillStyle = '#ffd21f';
       ctx.font = 'bold 15px sans-serif';
-      ctx.fillText('九九を クリアすると また あそべるよ', canvas.width / 2, 368);
-      drawKukuButton();
-    } else {
+      ctx.fillText(`⚡ パワーレベル ${powerLevel}`, canvas.width / 2, 368);
+    }
+    {
       const pulseScale = 1 + Math.sin(frameCount * 0.1) * 0.03;
       ctx.save();
       ctx.translate(canvas.width / 2, 415);
@@ -889,6 +949,7 @@ function update() {
 
     if (player.powerTimer > 0) player.powerTimer--;
     if (player.invincibleTimer > 0) player.invincibleTimer--;
+    if (stageClearTimer > 0) stageClearTimer--;
     if (comboTimer > 0) {
       comboTimer--;
       if (comboTimer === 0) combo = 0;
@@ -908,32 +969,41 @@ function update() {
 
     if (isTouching && frameCount % 9 === 0) {
       playShootSound();
-      if (player.powerTimer > 0) {
-        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: 4 });
-        bullets.push({ x: player.x - 10, y: player.y - 16, vx: -1.8, vy: -9.5, r: 4 });
-        bullets.push({ x: player.x + 10, y: player.y - 16, vx: 1.8, vy: -9.5, r: 4 });
+      // パワーレベルで弾が段階的に強くなる（Lv1: 2連射 / Lv2: 3WAY / Lv3: 大きくて強い弾）
+      const bulletR = powerLevel >= 3 ? 6 : 4;
+      const bulletDmg = powerLevel >= 3 ? 2 : 1;
+      const threeWay = player.powerTimer > 0 || powerLevel >= 2;
+      if (threeWay) {
+        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
+        bullets.push({ x: player.x - 10, y: player.y - 16, vx: -1.8, vy: -9.5, r: bulletR, dmg: bulletDmg });
+        bullets.push({ x: player.x + 10, y: player.y - 16, vx: 1.8, vy: -9.5, r: bulletR, dmg: bulletDmg });
+      } else if (powerLevel === 1) {
+        bullets.push({ x: player.x - 6, y: player.y - 20, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
+        bullets.push({ x: player.x + 6, y: player.y - 20, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
       } else {
-        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: 4 });
+        bullets.push({ x: player.x, y: player.y - 22, vx: 0, vy: -9.8, r: bulletR, dmg: bulletDmg });
       }
     }
 
     if (!boss && warningTimer === 0) {
-      const spawnRate = Math.max(15, 42 - Math.floor(score / 150));
+      const spawnRate = spawnIntervalFrames();
       if (frameCount % spawnRate === 0) {
         const rand = Math.random();
+        const rates = enemyTypeRates();
         let type = 'light';
-        if (rand < 0.22) type = 'heavy';
-        else if (rand < 0.48) type = 'spinner';
+        if (rand < rates.heavy) type = 'heavy';
+        else if (rand < rates.spinnerBelow) type = 'spinner';
 
+        const baseSpeed = type === 'heavy' ? (1.4 + Math.random() * 0.7) : (2.5 + Math.random() * 2.1);
         enemies.push({
           x: Math.random() * (canvas.width - 56) + 28,
           y: -28,
           type,
           r: type === 'heavy' ? 26 : (type === 'spinner' ? 18 : 15),
-          hp: type === 'heavy' ? 4 : (type === 'spinner' ? 2 : 1),
+          hp: enemyHpFor(type),
           hitFlash: 0,
           rotOffset: Math.random() * Math.PI,
-          speed: type === 'heavy' ? (1.4 + Math.random() * 0.7) : (2.5 + Math.random() * 2.1)
+          speed: baseSpeed * enemySpeedScale()
         });
       }
     }
@@ -942,7 +1012,7 @@ function update() {
       b.x += b.vx;
       b.y += b.vy;
 
-      ctx.fillStyle = player.powerTimer > 0 ? '#55ff99' : '#00eeff';
+      ctx.fillStyle = powerLevel >= 3 ? '#ffcc33' : ((player.powerTimer > 0 || powerLevel >= 2) ? '#55ff99' : '#00eeff');
       ctx.beginPath();
       ctx.roundRect(b.x - 2.5, b.y - 7, 5, 14, 2.5);
       ctx.fill();
@@ -954,6 +1024,16 @@ function update() {
     });
 
     items = items.filter(item => {
+      // パワーレベル2以上: 近くのアイテムが自機に引き寄せられる（マグネット）
+      if (powerLevel >= 2 && gameState === 'PLAYING') {
+        const mdx = player.x - item.x;
+        const mdy = player.y - item.y;
+        const mDist = Math.hypot(mdx, mdy);
+        if (mDist > 1 && mDist < 140) {
+          item.x += (mdx / mDist) * 2.4;
+          item.y += (mdy / mDist) * 2.4;
+        }
+      }
       item.y += item.speed;
 
       if (Math.hypot(item.x - player.x, item.y - player.y) < item.r + player.r) {
@@ -999,7 +1079,7 @@ function update() {
         const b = bullets[i];
         if (Math.hypot(e.x - b.x, e.y - b.y) < e.r + b.r) {
           bullets.splice(i, 1);
-          e.hp--;
+          e.hp -= (b.dmg || 1);
           e.hitFlash = 4;
 
           if (e.hp <= 0) {
@@ -1018,11 +1098,11 @@ function update() {
             } else if (e.type === 'spinner') {
               playExplosionSound(false);
               createExplosion(e.x, e.y, '#cc66ff', 16, 1.1);
-              if (Math.random() < 0.2) spawnItem(e.x, e.y);
+              if (Math.random() < dropChanceFor('spinner')) spawnItem(e.x, e.y);
             } else {
               playExplosionSound(false);
               createExplosion(e.x, e.y, '#ff5566', 12, 1.0);
-              if (Math.random() < 0.1) spawnItem(e.x, e.y);
+              if (Math.random() < dropChanceFor('light')) spawnItem(e.x, e.y);
             }
 
             addFloatingText(e.x, e.y, `+${earned}`, multiplier > 1.5 ? '#ffdd44' : '#ffffff');
@@ -1058,7 +1138,12 @@ function update() {
         const fireInterval = Math.max(45, 80 - bossLevel * 6);
         if (boss.attackTimer % fireInterval === 0) {
           const bulletSpeed = 3.2 + Math.min(2.0, bossLevel * 0.25);
-          const angles = [-0.45, -0.22, 0, 0.22, 0.45];
+          // 弾の速さは上限つき（既存）。代わりに扇の本数を少しだけ増やす
+          const fanCount = 5 + Math.min(2, Math.floor(bossLevel / 2));
+          const angles = [];
+          for (let fi = 0; fi < fanCount; fi++) {
+            angles.push(-0.45 + (0.9 / (fanCount - 1)) * fi);
+          }
           angles.forEach(ang => {
             enemyBullets.push({
               x: boss.x,
@@ -1075,7 +1160,7 @@ function update() {
         const b = bullets[i];
         if (Math.hypot(boss.x - b.x, boss.y - b.y) < boss.r + b.r) {
           bullets.splice(i, 1);
-          boss.hp--;
+          boss.hp -= (b.dmg || 1);
           boss.hitFlash = 3;
           playHitSound();
           createExplosion(b.x, b.y, '#ffcc88', 5, 0.7);
@@ -1093,6 +1178,14 @@ function update() {
             spawnItem(boss.x - 22, boss.y, 'power');
             spawnItem(boss.x + 22, boss.y, 'shield');
             addFloatingText(boss.x, boss.y, `BOSS DEFEATED! +${bonus}`, '#ffdd44');
+
+            // ステージクリア演出 + ボーナスアイテム（レベルが上がるほど少し増える）
+            stageClearTimer = 170;
+            const bonusItems = Math.min(3, bossLevel);
+            for (let bi = 0; bi < bonusItems; bi++) {
+              spawnItem(40 + Math.random() * (canvas.width - 80), -20 - bi * 55);
+            }
+            addFloatingText(canvas.width / 2, 205, 'ボーナス タイム！', '#55ff99');
 
             enemyBullets = [];
             boss = null;
@@ -1235,6 +1328,18 @@ function update() {
     }
   }
 
+  if (stageClearTimer > 0 && gameState === 'PLAYING') {
+    ctx.fillStyle = 'rgba(0, 50, 25, 0.55)';
+    ctx.fillRect(0, 240, canvas.width, 92);
+    ctx.fillStyle = '#55ff99';
+    ctx.font = 'bold 29px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(`ステージ ${bossLevel + 1} スタート！`, canvas.width / 2, 283);
+    ctx.fillStyle = '#ccffdd';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.fillText('てきが つよくなるぞ！ 九九で パワーアップしよう', canvas.width / 2, 313);
+  }
+
   if (gameState === 'GAMEOVER') {
     ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -1247,10 +1352,12 @@ function update() {
     ctx.fillStyle = '#ffcc00';
     ctx.font = '16px sans-serif';
     ctx.fillText(`BEST SCORE: ${highScore}`, canvas.width / 2, 345);
-    ctx.fillStyle = '#ffcc00';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText('九九を クリアすると また あそべるよ', canvas.width / 2, 398);
-    drawKukuButton();
+    if (bossLevel > 0) {
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 15px sans-serif';
+      ctx.fillText(`ボスを ${bossLevel}たい たおした！`, canvas.width / 2, 376);
+    }
+    drawChallengeButtons();
   }
 
   ctx.restore();
