@@ -332,17 +332,22 @@
     <script>
       "use strict";
 
-      /* ---------- STAR STRIKER の九九チャレンジ（ご褒美方式） ---------- */
+      /* ---------- ゲームの九九チャレンジ（ご褒美方式） ---------- */
       // ゲームから来た時は「パワーアップチャレンジ」になる：おすすめの段・
       // 10問固定・タイマーは非表示（裏で計時しベスト記録に反映）。正解でチャージが貯まり、クリアで
-      // 1ラン分のパワーアップ（starStrikerPowerUp フラグ）がチャージされる。
-      var POWER_UP_KEY = "starStrikerPowerUp";
-      var CHALLENGE_COUNT = 10;
-      var challengeMode = false;
-      var chargeCount = 0;
+      // 1ラン分のパワーアップ（ゲームごとのフラグ）がチャージされる。
+      var CHALLENGES = {
+        "star-striker": { key: "starStrikerPowerUp", home: "../games/star-striker/" },
+        "runner": { key: "runnerPowerUp", home: "../games/runner/" }
+      };
+      var challengeParam = null;
       try {
-        challengeMode = new URLSearchParams(location.search).get("challenge") === "star-striker";
+        challengeParam = new URLSearchParams(location.search).get("challenge");
       } catch (e) { /* よめなくても ふつうに あそべる */ }
+      var challengeMode = !!(challengeParam && CHALLENGES[challengeParam]);
+      var POWER_UP_KEY = challengeMode ? CHALLENGES[challengeParam].key : "starStrikerPowerUp";
+      var CHALLENGE_COUNT = 10;
+      var chargeCount = 0;
 
       function hasChargedPowerUp() {
         try { return localStorage.getItem(POWER_UP_KEY) === "1"; } catch (e) { return false; }
@@ -842,6 +847,8 @@
         document.getElementById("orderNote").hidden = true;
         document.querySelector(".danger-zone").hidden = true;
         document.getElementById("startBtn").textContent = "⚡ ちょうせん スタート！";
+        // 戻り先は来たゲームに合わせる
+        document.getElementById("toGameChallengeBtn").href = CHALLENGES[challengeParam].home;
         document.getElementById("statTimeBox").hidden = true;
         document.getElementById("chargeRow").hidden = false;
         chargeCount = 0;
