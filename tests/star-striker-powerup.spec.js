@@ -71,8 +71,9 @@ test("九九チャレンジ: 10問クリアでパワーアップがチャージ�
   await expect(page.locator("#normalResult")).toBeHidden();
   await expect(page.locator("#challengeRewardText")).toContainText("チャージしたよ");
   // パワーアップフラグが貯まり、裏で計ったタイムがベスト記録にも反映される
+  // （チャレンジは じゅんばん出題なので、記録は jun キーに入る）
   expect(await page.evaluate(() => localStorage.getItem("starStrikerPowerUp"))).toBe("1");
-  const best = await page.evaluate(() => localStorage.getItem("kuku-best-1-10"));
+  const best = await page.evaluate(() => localStorage.getItem("kuku-best-jun-1-10"));
   expect(parseFloat(best)).toBeGreaterThan(0);
   await expect(page.locator("#challengeRecordNote")).toBeVisible();
   await expect(page.locator("#challengeRecordNote")).toContainText("ベストきろくも こうしん");
