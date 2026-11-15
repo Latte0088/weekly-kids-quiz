@@ -23,7 +23,7 @@ test.describe("キラキラ はなび", () => {
     await openDraw(page);
     await page.click("#stampToggle");
     await expect(page.locator("#stampPop")).toBeVisible();
-    await expect(page.locator("#stampBtns .stamp-btn")).toHaveCount(18);
+    await expect(page.locator("#stampBtns .stamp-btn")).toHaveCount(24);
     await page.click('#stampBtns .stamp-btn[aria-label="dino"]');
     await expect(page.locator("#stampPop")).toBeHidden();
     await expect(page.locator("#stampToggle")).toHaveText("🦖");
@@ -60,6 +60,14 @@ test.describe("キラキラ はなび", () => {
     expect(shape.midBottom).toBeTruthy();
     expect(shape.midTopEmpty).toBeTruthy();
     expect(shape.stemDark).toBeTruthy();
+  });
+
+  test("新しいスタンプ6種もドット化できる", async ({ page }) => {
+    await openDraw(page);
+    const counts = await page.evaluate(() =>
+      ["rocket", "hikouki", "penguin", "suika", "ice", "kingyo"].map((id) => stampPoints(id).length)
+    );
+    counts.forEach((n) => expect(n).toBeGreaterThan(30));
   });
 
   test("貼ったスタンプが変身花火になる（パンダを貼るとパンダ色の形の粒が出る）", async ({ page }) => {
