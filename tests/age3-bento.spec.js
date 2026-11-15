@@ -21,12 +21,20 @@ async function eatAllRapid(page) {
 }
 
 test.describe("おべんとうづくり", () => {
-  test("おかずが10種あり、4個以上で完成できる", async ({ page }) => {
+  test("おかずが15種あり、4個以上で完成できる", async ({ page }) => {
     await openBento(page);
-    await expect(page.locator("#foodTray .food-btn")).toHaveCount(10);
+    await expect(page.locator("#foodTray .food-btn")).toHaveCount(15);
     await fillCells(page, [0, 6, 8, 9]); // おにぎり・からあげ・いちご・バナナ
     await expect(page.locator("#bentoGrid .bento-cell.filled")).toHaveCount(4);
     await expect(page.locator("#doneBtn")).toBeEnabled();
+  });
+
+  test("たまごやきとキウイは自作イラスト（SVG）で表示される", async ({ page }) => {
+    await openBento(page);
+    const tray = page.locator("#foodTray .food-btn");
+    await expect(tray.nth(2).locator("svg")).toHaveCount(1); // たまごやき
+    await expect(tray.nth(10).locator("svg")).toHaveCount(1); // キウイ
+    await expect(tray.nth(2)).not.toContainText("🥚");
   });
 
   test("プレート切替で新幹線プレートになる", async ({ page }) => {
