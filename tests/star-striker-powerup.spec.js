@@ -42,7 +42,7 @@ test("九九チャレンジ: 10問クリアでパワーアップがチャージ�
   await toGameOver(page);
   // Aボタン（九九チャレンジ、中心 y=429/640）で九九チャレンジへ
   await canvasClick(page, 0.5, 429 / 640);
-  await expect(page).toHaveURL(/\/kuku\/\?challenge=star-striker$/);
+  await expect(page).toHaveURL(/\/kuku\/\?challenge=star-striker&t=\d+$/);
 
   // チャレンジ画面: バナーと説明が出て、選択UIは隠れ、タイマーは無い
   await expect(page.locator("#challengeBanner")).toBeVisible();
@@ -116,7 +116,7 @@ test("九九チャレンジ: 10問クリアでパワーアップがチャージ�
   await page.evaluate(() => damagePlayer());
   await page.waitForFunction(() => gameState === "GAMEOVER");
   await canvasClick(page, 0.5, 429 / 640);
-  await expect(page).toHaveURL(/\/kuku\/\?challenge=star-striker$/);
+  await expect(page).toHaveURL(/\/kuku\/\?challenge=star-striker&t=\d+$/);
   await page.click("#startBtn");
   await expect(page.locator("#qDan")).toHaveText("2のだん");
   await expect(page.locator("#statQ")).toHaveText("1 / 10");
