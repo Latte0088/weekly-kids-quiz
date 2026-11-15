@@ -21,10 +21,10 @@ async function eatAllRapid(page) {
 }
 
 test.describe("おべんとうづくり", () => {
-  test("おかずが17種あり、4個以上で完成できる", async ({ page }) => {
+  test("おかずが18種あり、4個以上で完成できる", async ({ page }) => {
     await openBento(page);
-    await expect(page.locator("#foodTray .food-btn")).toHaveCount(17);
-    await fillCells(page, [0, 6, 7, 8]); // おにぎり・からあげ・いちご・バナナ
+    await expect(page.locator("#foodTray .food-btn")).toHaveCount(18);
+    await fillCells(page, [0, 6, 8, 9]); // おにぎり・からあげ・いちご・バナナ
     await expect(page.locator("#bentoGrid .bento-cell.filled")).toHaveCount(4);
     await expect(page.locator("#doneBtn")).toBeEnabled();
   });
@@ -33,7 +33,7 @@ test.describe("おべんとうづくり", () => {
     await openBento(page);
     const tray = page.locator("#foodTray .food-btn");
     await expect(tray.nth(2).locator("svg")).toHaveCount(1); // たまごやき
-    await expect(tray.nth(9).locator("svg")).toHaveCount(1); // キウイ
+    await expect(tray.nth(10).locator("svg")).toHaveCount(1); // キウイ
     await expect(tray.nth(2)).not.toContainText("🥚");
   });
 
