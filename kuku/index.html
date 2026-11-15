@@ -640,6 +640,9 @@
       }
 
       function startGame() {
+        // チャレンジ（ゲームのパワーアップ用）は開始の瞬間にも じゅんばん を
+        // 強制する。途中で戻って選び直しても、チャレンジである限り昇順になる
+        if (challengeMode) order = "jun";
         qIndex = 1;
         streak = 0;
         prev = null;
