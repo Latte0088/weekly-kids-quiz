@@ -551,20 +551,74 @@ function spawnItem(x, y, forcedType = null) {
   items.push({ x, y, r: 14, speed: 2.1, type });
 }
 
+// ボスの形態（倒した数＝bossLevel がそのまま形態番号になる）:
+// 1〜3: 形は同じで色だけ変化（赤→オレンジ→紫）
+// 4: +両翼（ウイングキャノン）・青 / 5: +ツノと回転シールド・緑 /
+// 6: +サブコア×2（先に壊せる・各50点）・金 / 7以降: さらに大型化
+const BOSS_FORM_STYLES = [
+  { body: '#cc1e40', edge: '#ff88a0' },
+  { body: '#e06428', edge: '#ffb088' },
+  { body: '#7a3ec9', edge: '#c09aff' },
+  { body: '#1e7ac9', edge: '#8ac9ff' },
+  { body: '#1fae54', edge: '#8affb0' },
+  { body: '#c9a227', edge: '#ffe98a' }
+];
+function bossFormStyle(form) {
+  return BOSS_FORM_STYLES[Math.min(form, 6) - 1];
+}
+
 function spawnBoss() {
   bossLevel++;
+  const form = bossLevel;
+  const scale = form >= 7 ? Math.min(1.3, 1 + (form - 6) * 0.1) : 1;
   const maxHp = 35 + (bossLevel - 1) * 15;
+  const subCores = [];
+  if (form >= 6) {
+    [-1, 1].forEach(s => {
+      subCores.push({
+        dx: s * Math.round(76 * scale), y: 6, r: 15,
+        hp: 10, maxHp: 10, hitFlash: 0, timer: Math.floor(Math.random() * 60)
+      });
+    });
+  }
   boss = {
     x: canvas.width / 2,
-    y: -65,
+    y: -(46 * scale + 24),
     targetY: 122,
-    r: 46,
+    r: Math.round(46 * scale),
     hp: maxHp,
     maxHp,
     vx: 1.6 + Math.min(1.5, bossLevel * 0.2),
     hitFlash: 0,
-    attackTimer: 0
+    attackTimer: 0,
+    form,
+    scale,
+    subCores
   };
+}
+
+// 両翼のキャノンから真下へ撃つ（形態4以降）
+function fireWingCannons(b, bulletSpeed) {
+  [-1, 1].forEach(s => {
+    enemyBullets.push({
+      x: b.x + s * (b.r + 18),
+      y: b.y + 10,
+      vx: 0,
+      vy: bulletSpeed * 0.9,
+      r: 5
+    });
+  });
+}
+
+// サブコアから真下へ撃つ（形態6以降）
+function fireSubCore(b, sc, bulletSpeed) {
+  enemyBullets.push({
+    x: b.x + sc.dx,
+    y: b.y + sc.y + sc.r - 2,
+    vx: 0,
+    vy: bulletSpeed * 0.85,
+    r: 4.5
+  });
 }
 
 function damagePlayer() {
@@ -797,12 +851,59 @@ function drawEnemy(e) {
 function drawBoss(b) {
   ctx.save();
   ctx.translate(b.x, b.y);
+  const style = bossFormStyle(b.form || 1);
+  const flash = b.hitFlash > 0;
 
-  ctx.fillStyle = b.hitFlash > 0 ? '#ffffff' : '#88112a';
+  // 両翼（形態4以降）: 本体の後ろ側に描く
+  if (b.form >= 4) {
+    ctx.fillStyle = flash ? '#ffffff' : style.body;
+    [-1, 1].forEach(s => {
+      ctx.beginPath();
+      ctx.moveTo(s * (b.r - 6), -6);
+      ctx.lineTo(s * (b.r + 30), 16);
+      ctx.lineTo(s * (b.r + 8), 30);
+      ctx.lineTo(s * (b.r - 14), 18);
+      ctx.closePath();
+      ctx.fill();
+    });
+    // ウイングキャノン
+    ctx.fillStyle = flash ? '#ffffff' : '#333a44';
+    [-1, 1].forEach(s => {
+      ctx.fillRect(s * (b.r + 18) - 4, 2, 8, 14);
+    });
+  }
+
+  // サブコア（形態6以降）: 連結バーと小コア
+  (b.subCores || []).forEach(sc => {
+    ctx.strokeStyle = flash ? '#ffffff' : style.body;
+    ctx.lineWidth = 7;
+    ctx.beginPath();
+    ctx.moveTo(0, sc.y);
+    ctx.lineTo(sc.dx, sc.y);
+    ctx.stroke();
+    ctx.fillStyle = sc.hitFlash > 0 ? '#ffffff' : style.body;
+    ctx.beginPath();
+    ctx.arc(sc.dx, sc.y, sc.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = style.edge;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    const sp = 6 + Math.sin(frameCount * 0.15 + sc.dx) * 1.5;
+    const sg = ctx.createRadialGradient(sc.dx, sc.y, 1, sc.dx, sc.y, sp);
+    sg.addColorStop(0, '#ffffff');
+    sg.addColorStop(0.5, '#ffaa22');
+    sg.addColorStop(1, '#ff2200');
+    ctx.fillStyle = sg;
+    ctx.beginPath();
+    ctx.arc(sc.dx, sc.y, sp, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // 本体: 側面パーツ + 八角形（色は形態で変わる）
+  ctx.fillStyle = flash ? '#ffffff' : style.body;
   ctx.fillRect(-b.r - 6, -10, 14, 28);
   ctx.fillRect(b.r - 8, -10, 14, 28);
 
-  ctx.fillStyle = b.hitFlash > 0 ? '#ffffff' : '#cc1e40';
   ctx.beginPath();
   for (let i = 0; i < 8; i++) {
     const angle = (Math.PI / 4) * i + Math.PI / 8;
@@ -813,11 +914,11 @@ function drawBoss(b) {
   }
   ctx.closePath();
   ctx.fill();
-  ctx.strokeStyle = '#ff88a0';
+  ctx.strokeStyle = style.edge;
   ctx.lineWidth = 3;
   ctx.stroke();
 
-  ctx.strokeStyle = '#660c1e';
+  ctx.strokeStyle = 'rgba(0, 0, 0, 0.35)';
   ctx.lineWidth = 2;
   ctx.beginPath();
   ctx.moveTo(-26, -18);
@@ -825,6 +926,19 @@ function drawBoss(b) {
   ctx.moveTo(-22, 18);
   ctx.lineTo(22, 18);
   ctx.stroke();
+
+  // ツノ（形態5以降）
+  if (b.form >= 5) {
+    ctx.fillStyle = flash ? '#ffffff' : style.edge;
+    [-1, 1].forEach(s => {
+      ctx.beginPath();
+      ctx.moveTo(s * 24, -b.r + 10);
+      ctx.lineTo(s * 10, -b.r - 18);
+      ctx.lineTo(s * 4, -b.r + 4);
+      ctx.closePath();
+      ctx.fill();
+    });
+  }
 
   const pulse = 15 + Math.sin(frameCount * 0.15) * 3;
   const coreGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, pulse);
@@ -835,6 +949,20 @@ function drawBoss(b) {
   ctx.beginPath();
   ctx.arc(0, 0, pulse, 0, Math.PI * 2);
   ctx.fill();
+
+  // 回転シールド（形態5以降）: 本体の周りを回る3つの弧（見た目のみ）
+  if (b.form >= 5) {
+    ctx.strokeStyle = style.edge;
+    ctx.globalAlpha = 0.75;
+    ctx.lineWidth = 5;
+    const rot = frameCount * 0.02;
+    for (let k = 0; k < 3; k++) {
+      ctx.beginPath();
+      ctx.arc(0, 0, b.r + 16, rot + k * (Math.PI * 2 / 3), rot + k * (Math.PI * 2 / 3) + 0.9);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
 
   ctx.restore();
 }
@@ -1124,19 +1252,24 @@ function update() {
 
     if (boss) {
       if (boss.hitFlash > 0) boss.hitFlash--;
+      boss.subCores.forEach(sc => { if (sc.hitFlash > 0) sc.hitFlash--; });
 
       if (boss.y < boss.targetY) {
         boss.y += 1.5;
       } else {
         boss.x += boss.vx;
-        if (boss.x < boss.r + 18 || boss.x > canvas.width - boss.r - 18) {
+        // サブコアがある形態では、サブコアが画面外に出ないよう移動範囲を狭める
+        const halfW = boss.subCores.length
+          ? Math.abs(boss.subCores[0].dx) + boss.subCores[0].r + 4
+          : boss.r + 18;
+        if (boss.x < halfW || boss.x > canvas.width - halfW) {
           boss.vx *= -1;
         }
 
         boss.attackTimer++;
         const fireInterval = Math.max(45, 80 - bossLevel * 6);
+        const bulletSpeed = 3.2 + Math.min(2.0, bossLevel * 0.25);
         if (boss.attackTimer % fireInterval === 0) {
-          const bulletSpeed = 3.2 + Math.min(2.0, bossLevel * 0.25);
           // 弾の速さは上限つき（既存）。代わりに扇の本数を少しだけ増やす
           const fanCount = 5 + Math.min(2, Math.floor(bossLevel / 2));
           const angles = [];
@@ -1153,10 +1286,41 @@ function update() {
             });
           });
         }
+        // 両翼キャノン（形態4以降）: 扇より遅い周期で真下へ撃つ
+        if (boss.form >= 4 && boss.attackTimer % (fireInterval * 2) === 0) {
+          fireWingCannons(boss, bulletSpeed);
+        }
+        // サブコア（形態6以降）: それぞれの周期で真下へ撃つ
+        boss.subCores.forEach(sc => {
+          sc.timer++;
+          if (sc.timer % 130 === 0) fireSubCore(boss, sc, bulletSpeed);
+        });
       }
 
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
+        // サブコアへの命中（形態6以降。本体より先に判定する）
+        let hitSubCore = false;
+        for (let si = boss.subCores.length - 1; si >= 0; si--) {
+          const sc = boss.subCores[si];
+          if (Math.hypot(boss.x + sc.dx - b.x, boss.y + sc.y - b.y) < sc.r + b.r) {
+            bullets.splice(i, 1);
+            hitSubCore = true;
+            sc.hp -= (b.dmg || 1);
+            sc.hitFlash = 3;
+            playHitSound();
+            createExplosion(b.x, b.y, '#ffcc88', 5, 0.7);
+            if (sc.hp <= 0) {
+              score += 50;
+              playExplosionSound(false);
+              createExplosion(boss.x + sc.dx, boss.y + sc.y, '#ffaa33', 18, 1.1);
+              addFloatingText(boss.x + sc.dx, boss.y + sc.y, 'サブコア はかい！ +50', '#ffdd44');
+              boss.subCores.splice(si, 1);
+            }
+            break;
+          }
+        }
+        if (hitSubCore) continue;
         if (Math.hypot(boss.x - b.x, boss.y - b.y) < boss.r + b.r) {
           bullets.splice(i, 1);
           boss.hp -= (b.dmg || 1);
