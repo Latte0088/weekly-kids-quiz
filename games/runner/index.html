@@ -73,6 +73,17 @@
         padding: 7px 14px; cursor: pointer;
       }
       #muteBtn:active { transform: scale(0.95); }
+      #fsBtnSmall {
+        position: absolute; bottom: 10px; right: 10px; z-index: 6;
+        font-family: inherit; font-weight: 800; font-size: 15px; color: #5d4037;
+        background: rgba(255,255,255,0.85); border: 2px solid #d7ccc8; border-radius: 999px;
+        padding: 7px 14px; cursor: pointer;
+      }
+      #fsBtnSmall:active { transform: scale(0.95); }
+      #fsBtn[hidden], #fsBtnSmall[hidden] { display: none; }
+      /* 全画面のときは上のバーを消して、ステージを画面いっぱいにする */
+      :fullscreen .site-bar { display: none; }
+      :fullscreen #stage { height: 100dvh; }
       #portraitOverlay {
         position: absolute; inset: 0; z-index: 20; display: none;
         align-items: center; justify-content: center; flex-direction: column; gap: 16px;
@@ -94,6 +105,7 @@
     <div id="stage">
       <canvas id="gameCanvas"></canvas>
       <button id="muteBtn" type="button">おと: オン</button>
+      <button id="fsBtnSmall" type="button">⛶ おおきく</button>
 
       <div class="screen" id="titleScreen">
         <div class="card">
@@ -112,6 +124,7 @@
           </div>
         </div>
         <button class="btn btn-start" id="startBtn" type="button">▶ スタート</button>
+        <button class="btn btn-title" id="fsBtn" type="button">⛶ おおきく する</button>
       </div>
 
       <div class="screen" id="clearScreen" hidden>
@@ -1095,6 +1108,45 @@
         if (soundOn) initAudio();
       });
       muteBtn.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
+
+      /* ================= 全画面（ぜんがめん） =================
+         スマホ横持ちだと縦が足りないので、全画面でブラウザのバーを消し、
+         上のサイトバーも隠してステージを画面いっぱいに広げる。 */
+      var fsBtn = document.getElementById("fsBtn");
+      var fsBtnSmall = document.getElementById("fsBtnSmall");
+      var fsRoot = document.documentElement;
+      var reqFs = fsRoot.requestFullscreen || fsRoot.webkitRequestFullscreen;
+      function isFs() { return !!(document.fullscreenElement || document.webkitFullscreenElement); }
+      function toggleFullscreen() {
+        try {
+          if (isFs()) {
+            var exitFs = document.exitFullscreen || document.webkitExitFullscreen;
+            if (exitFs) exitFs.call(document);
+          } else if (reqFs) {
+            var p = reqFs.call(fsRoot);
+            if (p && p.then) {
+              p.then(function () {
+                if (screen.orientation && screen.orientation.lock) {
+                  screen.orientation.lock("landscape").catch(function () { /* ロックできなくても続行 */ });
+                }
+              }).catch(function () { /* 全画面にできなくても続行 */ });
+            }
+          }
+        } catch (e) { /* 全画面にできなくてもゲームは続く */ }
+        setTimeout(resize, 80);
+      }
+      function refreshFsLabels() {
+        var t = isFs() ? "⛶ もとの おおきさ" : "⛶ おおきく する";
+        fsBtn.textContent = t;
+        fsBtnSmall.textContent = isFs() ? "⛶ もどす" : "⛶ おおきく";
+        setTimeout(resize, 80);
+      }
+      if (!reqFs) { fsBtn.hidden = true; fsBtnSmall.hidden = true; }
+      fsBtn.addEventListener("click", toggleFullscreen);
+      fsBtnSmall.addEventListener("click", toggleFullscreen);
+      fsBtnSmall.addEventListener("pointerdown", function (e) { e.stopPropagation(); });
+      document.addEventListener("fullscreenchange", refreshFsLabels);
+      document.addEventListener("webkitfullscreenchange", refreshFsLabels);
 
       /* ================= メインループ ================= */
       var lastTs = 0;

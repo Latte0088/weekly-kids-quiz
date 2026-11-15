@@ -173,6 +173,26 @@ test.describe("ポヨンラン", () => {
     expect(st.flag).toBeNull();
   });
 
+  test("全画面ボタンで画面いっぱいに広がる", async ({ page }) => {
+    await page.goto("/games/runner/");
+    await expect(page.locator("#fsBtn")).toBeVisible();
+    // キャンバスはステージの幅いっぱい（左右に余白なし）
+    const fill = await page.evaluate(() => {
+      const c = document.getElementById("gameCanvas");
+      const s = document.getElementById("stage");
+      return Math.abs(c.clientWidth - s.clientWidth) <= 1 && Math.abs(c.clientHeight - s.clientHeight) <= 1;
+    });
+    expect(fill).toBe(true);
+    await page.click("#fsBtn");
+    await page.waitForFunction(() => !!document.fullscreenElement, null, { timeout: 5000 });
+    // 全画面ではサイトバーが消えてステージが高くなる
+    const fsStageH = await page.evaluate(() => document.getElementById("stage").clientHeight);
+    await page.evaluate(() => document.exitFullscreen());
+    await page.waitForFunction(() => !document.fullscreenElement, null, { timeout: 5000 });
+    const normalStageH = await page.evaluate(() => document.getElementById("stage").clientHeight);
+    expect(fsStageH).toBeGreaterThan(normalStageH);
+  });
+
   test("ゲームハブに2つのゲームが並ぶ", async ({ page }) => {
     await page.goto("/games/");
     await expect(page.locator('a.quiz-card[href="star-striker/"]')).toHaveCount(1);
