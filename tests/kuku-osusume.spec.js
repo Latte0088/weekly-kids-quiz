@@ -1,8 +1,9 @@
 const { test, expect } = require("@playwright/test");
 
 // 九九の「おすすめ」ボタンと「記録クリア」ボタンの検証。
-// おすすめ = 記録が無い組み合わせ（段×問題数）を優先し、
+// おすすめ = 記録が無い組み合わせ（段×10もん）を優先し、
 // 全部に記録がある場合は1問あたりのベストタイムが最遅の組み合わせ。
+// 20もんはおすすめの候補に入らない（自分で選んだときだけ遊ぶ）。
 
 function seedBests(page, overrides, skip) {
   return page.addInitScript(
@@ -46,6 +47,24 @@ test("おすすめ: 全部に記録があるときは1問あたり最遅の組�
   await expect(page.locator("#osusumeBtn")).toContainText("10もん");
   await page.click("#osusumeBtn");
   await expect(page.locator("#qDan")).toHaveText("3のだん");
+  await expect(page.locator("#statQ")).toHaveText("1 / 10");
+});
+
+test("おすすめ: 20もんは候補に入らない（未記録の20もんや最遅の20もんがあっても10もんを勧める）", async ({ page }) => {
+  // 10もんは全部に記録あり。最遅は 2のだん・10もん = 40秒（4.0秒/問）。
+  // 20もん側には「未記録（9のだん・0のだん）」と「1問あたり最遅の 5のだん・20もん = 200秒」を
+  // 用意しても、おすすめは 10もんから選ばれることを確認する。
+  await seedBests(
+    page,
+    { "kuku-best-2-10": "40.0", "kuku-best-5-20": "200.0" },
+    ["kuku-best-9-20", "kuku-best-0-20"]
+  );
+  await page.goto("/kuku/");
+  await expect(page.locator("#osusumeBtn")).toContainText("2のだん");
+  await expect(page.locator("#osusumeBtn")).toContainText("10もん");
+  await expect(page.locator("#osusumeBtn")).not.toContainText("20もん");
+  await page.click("#osusumeBtn");
+  await expect(page.locator("#qDan")).toHaveText("2のだん");
   await expect(page.locator("#statQ")).toHaveText("1 / 10");
 });
 

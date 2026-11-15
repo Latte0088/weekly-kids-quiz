@@ -467,11 +467,11 @@
 
       function computeOsusume() {
         var dans = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+        // おすすめは10もんだけを候補にする（20もんは自分で選んだときだけ遊ぶ。
+        // 長いコースへアプリ側から誘導しないための仕様）
         var candidates = [];
-        [10, 20].forEach(function (c) {
-          dans.forEach(function (d) { candidates.push({ dan: d, count: c }); });
-        });
-        // きろくが無いものを優先（10もん→20もん、1のだん→9のだん→ミックスの順）
+        dans.forEach(function (d) { candidates.push({ dan: d, count: 10 }); });
+        // きろくが無いものを優先（1のだん→9のだん→ミックスの順）
         for (var i = 0; i < candidates.length; i++) {
           if (bestFor(candidates[i].dan, candidates[i].count) === null) {
             return { dan: candidates[i].dan, count: candidates[i].count, reason: "none" };

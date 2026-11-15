@@ -173,6 +173,23 @@ test.describe("たしざん・ひきざんスピードアタック", () => {
     expect(keys.filter((k) => k.startsWith("calc-best-"))).toEqual([]);
   });
 
+  test("おすすめは20もんを候補に入れない（10もんの中から勧める）", async ({ page }) => {
+    await page.addInitScript(() => {
+      for (const op of ["plus", "minus", "mix"]) {
+        for (const dg of [1, 2]) {
+          localStorage.setItem(`calc-best-${op}-${dg}-10`, "20.0");
+        }
+      }
+      // 10もんの最遅は ひきざん・2けた（4.0秒/問）
+      localStorage.setItem("calc-best-minus-2-10", "40.0");
+      // 20もん側に1問あたり最遅を用意しても、おすすめには出ない
+      localStorage.setItem("calc-best-plus-1-20", "200.0");
+    });
+    await page.goto("/calc/");
+    await expect(page.locator("#osusumeBtn")).toContainText("ひきざん・2けた・10もん");
+    await expect(page.locator("#osusumeBtn")).not.toContainText("20もん");
+  });
+
   test("記録クリアは calc の記録だけを消し、九九の記録は消えない", async ({ page }) => {
     await page.goto("/calc/");
     await page.evaluate(() => localStorage.setItem("kuku-best-1-10", "12.3"));

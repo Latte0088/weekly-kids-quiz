@@ -468,7 +468,9 @@
       }
 
       function computeOsusume() {
-        var candidates = comboList();
+        // おすすめは10もんだけを候補にする（20もんは自分で選んだときだけ遊ぶ。
+        // 長いコースへアプリ側から誘導しないための仕様。記録一覧には20もんも出る）
+        var candidates = comboList().filter(function (cd) { return cd.count === 10; });
         for (var i = 0; i < candidates.length; i++) {
           if (bestFor(candidates[i].op, candidates[i].dg, candidates[i].count) === null) {
             return { op: candidates[i].op, dg: candidates[i].dg, count: candidates[i].count, reason: "none" };
