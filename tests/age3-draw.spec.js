@@ -39,6 +39,29 @@ test.describe("キラキラ はなび", () => {
     await expect(page.locator("#stampToggle")).toHaveText("🍎");
   });
 
+  test("バナナスタンプは三日月型（中央下が実で、中央上は空き、右上にヘタの濃色点）", async ({ page }) => {
+    await openDraw(page);
+    const shape = await page.evaluate(() => {
+      const pts = stampPoints("banana");
+      const xs = pts.map((p) => p[0]);
+      return {
+        n: pts.length,
+        width: Math.max(...xs) - Math.min(...xs),
+        // 中央下（実の部分）に点がある
+        midBottom: pts.some((p) => Math.abs(p[0]) < 0.2 && p[1] > 0.1 && p[1] < 0.4),
+        // 中央上（内側のへこみ）は空いている
+        midTopEmpty: !pts.some((p) => Math.abs(p[0]) < 0.2 && p[1] < -0.25),
+        // 右上にヘタ由来の濃色点（花火では白ドットになる）がある
+        stemDark: pts.some((p) => p[2] === 1 && p[0] > 0.55 && p[1] < -0.3),
+      };
+    });
+    expect(shape.n).toBeGreaterThan(20);
+    expect(shape.width).toBeGreaterThan(1.6);
+    expect(shape.midBottom).toBeTruthy();
+    expect(shape.midTopEmpty).toBeTruthy();
+    expect(shape.stemDark).toBeTruthy();
+  });
+
   test("貼ったスタンプが変身花火になる（パンダを貼るとパンダ色の形の粒が出る）", async ({ page }) => {
     await openDraw(page);
     // スタンプのドット化が十分な点数を持つ
