@@ -77,6 +77,21 @@ test.describe("九九の出題モード", () => {
     await expect(page.locator("#osusumeBtn")).toContainText("2のだん");
   });
 
+  test("チャレンジ中に もどる→やっぱり スタート しても じゅんばん のまま", async ({ page }) => {
+    await page.goto("/kuku/?challenge=star-striker&t=12345");
+    await page.click("#startBtn");
+    await expect(page.locator("#view-game")).toBeVisible();
+    // 途中で「もどる」を押してスタート画面に戻る
+    await page.click("#backBtn");
+    await expect(page.locator("#view-start")).toBeVisible();
+    // やっぱり九九（ちょうせん スタート）を押す
+    await page.click("#startBtn");
+    const pairs = [];
+    for (let i = 0; i < 3; i++) pairs.push(await answerCurrent(page));
+    expect(pairs).toEqual([[1, 1], [1, 2], [1, 3]]);
+    expect(await page.evaluate(() => order)).toBe("jun");
+  });
+
   test("ゲームからの挑戦は じゅんばん で出題され、記録は jun キーに入り、おすすめが次へ進む", async ({ page }) => {
     await page.goto("/kuku/?challenge=star-striker");
     await page.click("#startBtn");
