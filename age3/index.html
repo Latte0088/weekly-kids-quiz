@@ -77,13 +77,13 @@
   #doneBtn { background: #ff7b54; font-size: 1.5rem; padding: 10px 34px; }
   /* 背の低い画面（スマホ）では全体を圧縮して「できた！」が画面内に収まるようにする */
   @media (max-height: 760px) {
-    #view-bento { padding: 74px 10px 10px; }
+    #view-bento { padding: 68px 10px 10px; }
     .plate-row { margin-bottom: 4px; }
-    .plate-btn { min-height: 52px; font-size: .95rem; }
+    .plate-btn { min-height: 48px; font-size: .95rem; }
     .bento-box { padding: 9px; }
     .bento-grid { gap: 6px; }
-    .food-tray { margin-top: 12px; gap: 8px; }
-    .bento-actions { padding-top: 8px; }
+    .food-tray { margin-top: 8px; gap: 6px; grid-template-columns: repeat(6, 1fr); }
+    .bento-actions { padding-top: 6px; }
     #doneBtn { min-height: 64px; }
     .eat-banner { margin-top: 8px; }
     .eat-face { font-size: 2.8rem; }
@@ -418,7 +418,6 @@ document.querySelectorAll("[data-home]").forEach(function (btn) {
 document.getElementById("siteTopBtn").addEventListener("click", function () { location.href = "../index.html"; });
 
 /* ================= おべんとう ================= */
-var HAMBURG_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true"><ellipse cx="24" cy="29" rx="17" ry="11" fill="#8d5524"/><ellipse cx="24" cy="25" rx="17" ry="11" fill="#a9713a"/><ellipse cx="17" cy="21" rx="6" ry="3" fill="#cf9a58"/></svg>';
 var TAMAGOYAKI_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="13" width="34" height="23" rx="6" fill="#ffca28"/><rect x="11" y="17" width="26" height="15" rx="4" fill="#ffe082"/><path d="M24.5 20.5a4.5 4.5 0 1 1-4.5 4.5 3.2 3.2 0 1 0 3.2-3.2" stroke="#f9a825" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>';
 var KIWI_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="20" fill="#7a4a21"/><circle cx="24" cy="24" r="17.5" fill="#8bc34a"/><ellipse cx="24" cy="24" rx="7.5" ry="6" fill="#dcedc8"/><g fill="#263238"><circle cx="34.5" cy="24" r="1.5"/><circle cx="31.4" cy="31.4" r="1.5"/><circle cx="24" cy="34.5" r="1.5"/><circle cx="16.6" cy="31.4" r="1.5"/><circle cx="13.5" cy="24" r="1.5"/><circle cx="16.6" cy="16.6" r="1.5"/><circle cx="24" cy="13.5" r="1.5"/><circle cx="31.4" cy="16.6" r="1.5"/></g></svg>';
 var MEATBALL_SVG = '<svg viewBox="0 0 48 48" aria-hidden="true"><line x1="8" y1="40" x2="40" y2="8" stroke="#d7a05a" stroke-width="2.5" stroke-linecap="round"/><circle cx="16.5" cy="31.5" r="7.5" fill="#8d5524"/><circle cx="24" cy="24" r="8.5" fill="#8d5524"/><circle cx="31.5" cy="16.5" r="7.5" fill="#8d5524"/><ellipse cx="21.5" cy="20.5" rx="3.4" ry="2.2" fill="#a9713a"/><ellipse cx="29.5" cy="13.8" rx="2.8" ry="1.8" fill="#a9713a"/><ellipse cx="14.5" cy="28.8" rx="2.8" ry="1.8" fill="#a9713a"/></svg>';
@@ -431,14 +430,16 @@ var FOODS = [
   { html: "🍅", name: "ミニトマト", sfx: "pop2" },
   { html: "🍤", name: "エビフライ", sfx: "snap" },
   { html: "🍗", name: "からあげ", sfx: "sizzle" },
-  { html: HAMBURG_SVG, name: "ハンバーグ", sfx: "sizzle" },
   { html: "🍓", name: "いちご", sfx: "pophi" },
   { html: "🍌", name: "バナナ", sfx: "glide" },
   { html: KIWI_SVG, name: "キウイ", sfx: "pop" },
   { html: MEATBALL_SVG, name: "ミートボール", sfx: "pop" },
   { html: "🍟", name: "ポテトフライ", sfx: "snap" },
   { html: EDAMAME_SVG, name: "えだまめ", sfx: "boing" },
-  { html: "🍮", name: "プリン", sfx: "pophi" }
+  { html: "🍮", name: "プリン", sfx: "pophi" },
+  { html: "🍊", name: "みかん", sfx: "pop" },
+  { html: "🍎", name: "りんご", sfx: "pop2" },
+  { html: "🍇", name: "ぶどう", sfx: "pop" }
 ];
 function sndFood(kind) {
   if (kind === "sizzle") { noiseHit(0, .12, 5200, .20, "highpass"); noiseHit(.09, .12, 4800, .16, "highpass"); noiseHit(.18, .16, 5600, .13, "highpass"); tone(196, 0, .2, "triangle", .15); }
