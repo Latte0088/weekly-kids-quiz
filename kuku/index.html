@@ -231,7 +231,16 @@
             <button class="pick-btn" data-count="endless" type="button">エンドレス</button>
           </div>
 
-          <p class="challenge-info" id="challengeInfo" hidden>もんだいは 10もん。タイマーは 見えないから あせらなくて だいじょうぶ（じかんは そっと きろくされて、スピードアタックの ベストに はんえいされるよ）。<br />まちがえても、とけるまで おなじ もんだいが でるよ。</p>
+          <div class="sec-head" style="margin-top: 22px;">
+            <h2 class="sec-title">3. でかた を えらぶ</h2>
+          </div>
+          <div class="count-row" id="orderRow">
+            <button class="pick-btn" data-order="random" type="button">🎲 ランダム</button>
+            <button class="pick-btn" data-order="jun" type="button">🔢 じゅんばん</button>
+          </div>
+          <p class="osusume-note" id="orderNote"></p>
+
+          <p class="challenge-info" id="challengeInfo" hidden>もんだいは 10もん。じゅんばん（×1、×2、…の じゅん）で でるから、テンポよく とけるよ！タイマーは 見えないから あせらなくて だいじょうぶ（じかんは そっと きろくされて、スピードアタックの ベストに はんえいされるよ）。<br />まちがえても、とけるまで おなじ もんだいが でるよ。</p>
           <button class="start-btn" id="startBtn" type="button">▶ スタート！</button>
         </section>
 
@@ -342,6 +351,7 @@
       /* ---------- 設定 ---------- */
       var dan = 0;            // 0 = ミックス, 1-9 = だん
       var count = 10;         // 10 | 20 | Infinity (エンドレス)
+      var order = "random";   // "random" = ランダム（山札） | "jun" = じゅんばん（昇順）
       var soundOn = true;
 
       var viewStart = document.getElementById("view-start");
@@ -390,7 +400,13 @@
       });
 
       /* ---------- ベストタイム ---------- */
-      function bestKey() { return "kuku-best-" + dan + "-" + count; }
+      // 記録は出題モード別に持つ（じゅんばんは予測できる分だけ速くなるので、
+      // ランダムの記録と混ぜない）
+      function bestKey() {
+        return order === "jun"
+          ? "kuku-best-jun-" + dan + "-" + count
+          : "kuku-best-" + dan + "-" + count;
+      }
       function loadBest() {
         if (count === Infinity) return null;
         try {
@@ -437,6 +453,15 @@
         });
       });
 
+      var orderButtons = document.querySelectorAll("#orderRow .pick-btn");
+      orderButtons.forEach(function (btn) {
+        btn.addEventListener("click", function () {
+          order = btn.getAttribute("data-order");
+          refreshSelection();
+        });
+      });
+      var orderNote = document.getElementById("orderNote");
+
       function refreshSelection() {
         for (var n = 1; n <= 9; n++) {
           danButtons[n].classList.toggle("selected", dan === n);
@@ -447,6 +472,14 @@
           var c = v === "endless" ? Infinity : parseInt(v, 10);
           btn.classList.toggle("selected", count === c);
         });
+        orderButtons.forEach(function (btn) {
+          btn.classList.toggle("selected", order === btn.getAttribute("data-order"));
+        });
+        orderNote.textContent = order === "jun"
+          ? (dan === 0
+              ? "1×1、1×2、…2×1、2×2…と じゅんばんに でるよ"
+              : dan + "×1、" + dan + "×2、" + dan + "×3…と じゅんばんに でるよ")
+          : "もんだいは バラバラの じゅんばんで でるよ";
         refreshBestLabel();
         refreshOsusume();
       }
@@ -457,10 +490,16 @@
       var osusumeNote = document.getElementById("osusumeNote");
 
       function bestFor(d, c) {
+        // おすすめの判定では、ランダム・じゅんばん どちらの記録があっても
+        // 「れんしゅう済み」とみなす（ある方のうち速い方を返す）
+        var vals = [];
         try {
-          var v = localStorage.getItem("kuku-best-" + d + "-" + c);
-          return v === null ? null : parseFloat(v);
+          var v1 = localStorage.getItem("kuku-best-" + d + "-" + c);
+          var v2 = localStorage.getItem("kuku-best-jun-" + d + "-" + c);
+          if (v1 !== null) vals.push(parseFloat(v1));
+          if (v2 !== null) vals.push(parseFloat(v2));
         } catch (e) { return null; }
+        return vals.length ? Math.min.apply(null, vals) : null;
       }
 
       function danLabel(d) { return d === 0 ? "ミックス" : d + "のだん"; }
@@ -551,16 +590,31 @@
         for (var n = 0; n < arr.length; n++) deck.push(arr[n]);
       }
 
+      var seqPos = 0;   // じゅんばんモードで出した問題数
+
       function nextQuestion() {
         var a, b;
-        if (dan === 0) {
+        if (order === "jun") {
+          // じゅんばん（昇順）: 段が固定なら ×1→×9 を繰り返し、
+          // ミックスなら 1×1〜1×9、2×1〜2×9…と進む
+          if (dan === 0) {
+            a = Math.floor(seqPos / 9) + 1;
+            b = (seqPos % 9) + 1;
+          } else {
+            a = dan;
+            b = (seqPos % 9) + 1;
+          }
+          seqPos++;
+        } else if (dan === 0) {
           if (deckA.length === 0) refillDeck(deckA, lastA);
           a = deckA.shift(); lastA = a;
+          if (deckB.length === 0) refillDeck(deckB, lastB);
+          b = deckB.shift(); lastB = b;
         } else {
           a = dan;
+          if (deckB.length === 0) refillDeck(deckB, lastB);
+          b = deckB.shift(); lastB = b;
         }
-        if (deckB.length === 0) refillDeck(deckB, lastB);
-        b = deckB.shift(); lastB = b;
         prev = { a: a, b: b };
         cur = { a: a, b: b, ans: a * b };
         input = "";
@@ -590,6 +644,7 @@
         streak = 0;
         prev = null;
         deckA = []; deckB = []; lastA = 0; lastB = 0;
+        seqPos = 0;
         viewStart.hidden = true;
         viewResult.hidden = true;
         viewGame.hidden = false;
@@ -762,6 +817,9 @@
       function applyChallengeSetup() {
         applyOsusumeSelection();
         count = CHALLENGE_COUNT;
+        // ゲームからの挑戦は じゅんばん（昇順）にして、テンポよく解けるようにする
+        order = "jun";
+        refreshSelection();
         var banner = document.getElementById("challengeBanner");
         if (osusume) {
           banner.innerHTML = "🚀 パワーアップ ちょうせん！ おすすめの " +
@@ -777,6 +835,8 @@
         document.getElementById("osusumeBtn").hidden = true;
         document.getElementById("osusumeNote").hidden = true;
         document.getElementById("countRow").hidden = true;
+        document.getElementById("orderRow").hidden = true;
+        document.getElementById("orderNote").hidden = true;
         document.querySelector(".danger-zone").hidden = true;
         document.getElementById("startBtn").textContent = "⚡ ちょうせん スタート！";
         document.getElementById("statTimeBox").hidden = true;
