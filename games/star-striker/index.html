@@ -270,7 +270,9 @@ function nextRewardText() {
 }
 
 function goToKukuChallenge() {
-  location.href = '../../kuku/?challenge=star-striker';
+  // t= のキャッシュバスター付き: スマホに残った古い九九ページ（更新前）が
+  // そのまま開かれて「ランダムのまま」に見える事故を防ぐ（必ず最新を取りに行く）
+  location.href = '../../kuku/?challenge=star-striker&t=' + Date.now();
 }
 
 // ゲームオーバー画面の2つのボタン
