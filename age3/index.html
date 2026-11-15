@@ -1185,10 +1185,24 @@ function drawStampShape(ctx, x, y, size, color, shape) {
     ctx.fillStyle = color;
     ctx.beginPath(); ctx.ellipse(s * 0.48, -s * 0.78, s * 0.34, s * 0.17, -0.5, 0, 6.29); ctx.fill();
   } else if (shape === "banana") {
-    ctx.strokeStyle = color; ctx.lineWidth = s * 0.52; ctx.lineCap = "round";
-    ctx.beginPath(); ctx.arc(0, -s * 0.25, s * 0.78, Math.PI * 0.18, Math.PI * 0.92); ctx.stroke();
+    // 三日月型の実を塗りで描く: 外側は大きくふくらみ、内側はへこませて、
+    // 両端をとがらせる（旧来の円弧1本だと月や笑口に見えてしまうため）
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.98, -s * 0.08);
+    ctx.quadraticCurveTo(-s * 0.15, s * 0.95, s * 0.78, -s * 0.5);
+    ctx.quadraticCurveTo(s * 0.1, s * 0.3, -s * 0.98, -s * 0.08);
+    ctx.closePath(); ctx.fill();
+    // 中央のすじ
+    ctx.strokeStyle = "rgba(0,0,0,0.16)"; ctx.lineWidth = s * 0.07; ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.78, -s * 0.02);
+    ctx.quadraticCurveTo(-s * 0.08, s * 0.52, s * 0.58, -s * 0.32);
+    ctx.stroke();
+    // ヘタ（茶色の線）と左端の点
+    ctx.strokeStyle = "#5d4037"; ctx.lineWidth = s * 0.16;
+    ctx.beginPath(); ctx.moveTo(s * 0.74, -s * 0.46); ctx.lineTo(s * 0.92, -s * 0.74); ctx.stroke();
     ctx.fillStyle = "#5d4037";
-    ctx.beginPath(); ctx.arc(s * 0.68, s * 0.16, s * 0.1, 0, 6.29); ctx.fill();
+    ctx.beginPath(); ctx.arc(-s * 0.98, -s * 0.08, s * 0.07, 0, 6.29); ctx.fill();
   } else if (shape === "ichigo") {
     ctx.beginPath();
     ctx.moveTo(-s * 0.82, -s * 0.42);
