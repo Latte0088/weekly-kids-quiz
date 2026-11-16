@@ -91,6 +91,50 @@ test.describe("キラキラ はなび", () => {
       .toBe(true);
   });
 
+  test("スタンプが実際にキャンバスへ描かれる（スプライト描画）", async ({ page }) => {
+    await openDraw(page);
+    const box = await page.locator("#fxCanvas").boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect.poll(() => page.evaluate(() => stampCount)).toBe(1);
+    const painted = await page.evaluate(() => {
+      const c = document.getElementById("artCanvas");
+      const ctx = c.getContext("2d");
+      const d = ctx.getImageData(0, 0, c.width, c.height).data;
+      let n = 0;
+      for (let i = 3; i < d.length; i += 4) if (d[i] > 0) n++;
+      return n;
+    });
+    expect(painted).toBeGreaterThan(200);
+  });
+
+  test("打ち上げ状態が長く残ってもウォッチドッグが解除してスタンプできる", async ({ page }) => {
+    await openDraw(page);
+    await page.evaluate(() => {
+      launchPhase = "rise";
+      launchStart = performance.now() - 9000;
+    });
+    await expect.poll(() => page.evaluate(() => launchPhase), { timeout: 5000 }).toBe("");
+    const box = await page.locator("#fxCanvas").boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect.poll(() => page.evaluate(() => stampCount)).toBe(1);
+  });
+
+  test("打ち上げ中にホームへ出て入り直すと状態がリセットされる", async ({ page }) => {
+    await openDraw(page);
+    await page.evaluate(() => {
+      launchPhase = "burst";
+      launchStart = performance.now();
+      burstStart = performance.now();
+    });
+    await page.click("#view-draw [data-home]");
+    await page.click('[data-goto="draw"]');
+    await expect(page.locator("#view-draw")).toBeVisible();
+    await expect.poll(() => page.evaluate(() => launchPhase)).toBe("");
+    const box = await page.locator("#fxCanvas").boundingBox();
+    await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+    await expect.poll(() => page.evaluate(() => stampCount)).toBe(1);
+  });
+
   test("たくさん描くと変身花火（形の粒）が必ず出る", async ({ page }) => {
     await openDraw(page);
     const box = await page.locator("#fxCanvas").boundingBox();
