@@ -1706,9 +1706,30 @@ function spawnSparkles(x, y, color, n) {
     particles.push({ x: x, y: y, vx: (Math.random() - 0.5) * 1.6, vy: (Math.random() - 0.5) * 1.6 - 0.4, life: 1, decay: 0.03 + Math.random() * 0.03, size: Math.random() * 2.6 + 1, color: color, grav: 0.01 });
   }
 }
+/* スタンプは種類×色×サイズごとに一度だけオフスクリーンへ描いて使い回す。
+   shadowBlur つきの図形描画をタップのたびに行うと、低スペック端末で
+   キャンバスの描画が詰まって「押せない」状態になるため。 */
+var stampSpriteCache = {}, stampSpriteCount = 0;
+function stampSprite(id, color, size) {
+  var key = id + "|" + color + "|" + size;
+  if (stampSpriteCache[key]) return stampSpriteCache[key];
+  if (stampSpriteCount > 60) { stampSpriteCache = {}; stampSpriteCount = 0; }
+  var SS = 2;
+  var half = Math.ceil(size * 1.95 + 20);
+  var cv = document.createElement("canvas");
+  cv.width = cv.height = half * 2 * SS;
+  var c2 = cv.getContext("2d");
+  c2.scale(SS, SS);
+  drawStampShape(c2, half, half, size, color, id);
+  var spr = { cv: cv, half: half };
+  stampSpriteCache[key] = spr;
+  stampSpriteCount++;
+  return spr;
+}
 function stampAt(x, y) {
   var fav = ["shinkansen", "panda", "dino", "patcar", "neko", "inu", "usagi", "sakana", "taiyo", "ringo", "banana", "ichigo", "mikan", "sakuranbo", "budou", "rocket", "hikouki", "penguin", "suika", "ice", "kingyo"].indexOf(curStamp) !== -1;
-  drawStampShape(artX, x, y, fav ? 24 : 15, curColor, curStamp);
+  var spr = stampSprite(curStamp, curColor, fav ? 24 : 15);
+  artX.drawImage(spr.cv, x - spr.half, y - spr.half, spr.half * 2, spr.half * 2);
   stampCount++;
   placedStamps.push({ id: curStamp, color: curColor });
   spawnSparkles(x, y, curColor, 3);
@@ -1744,6 +1765,14 @@ fxC.addEventListener("pointermove", function (e) {
 });
 ["pointerup", "pointercancel"].forEach(function (ev) {
   fxC.addEventListener(ev, function () { drawingNow = false; });
+});
+/* はなび画面に入り直したら、打ち上げ中などの状態は必ずリセットする
+   （状態が残ったまま固まって「新しいタブで開き直すしかない」を防ぐ） */
+document.querySelector('[data-goto="draw"]').addEventListener("click", function () {
+  launchPhase = "";
+  pendingBursts = [];
+  drawingNow = false;
+  stampPopEl.hidden = true;
 });
 document.getElementById("launchBtn").addEventListener("click", function () {
   if (launchPhase) return;
@@ -1827,6 +1856,13 @@ function fxLoop(ts) {
   if (views.draw.hidden) return;
   var w = stageEl.clientWidth, h = stageEl.clientHeight;
   if (!w) return;
+  /* ウォッチドッグ：打ち上げ状態が長く残るとスタンプが押せなくなるため、
+     実時間で8秒を超えたら強制的に解除する */
+  if (launchPhase && performance.now() - launchStart > 8000) {
+    launchPhase = "";
+    pendingBursts = [];
+    drawingNow = false;
+  }
   fxX.clearRect(0, 0, w, h);
   /* 星空 */
   skyStars.forEach(function (st) {
@@ -1846,10 +1882,14 @@ function fxLoop(ts) {
     fxX.globalAlpha = 1 - p * 0.25;
     if (stampCount > 0) fxX.drawImage(artC, cx - iw / 2, iy, iw, ih);
     fxX.restore();
+    var glowR = (7 + p * 5) * 3.2;
+    var grd = fxX.createRadialGradient(cx, iy + ih / 2, 2, cx, iy + ih / 2, glowR);
+    grd.addColorStop(0, "rgba(255,224,130,0.9)");
+    grd.addColorStop(1, "rgba(255,224,130,0)");
+    fxX.fillStyle = grd;
+    fxX.beginPath(); fxX.arc(cx, iy + ih / 2, glowR, 0, 6.29); fxX.fill();
     fxX.fillStyle = "#ffe082";
-    fxX.shadowColor = "#ffd54f"; fxX.shadowBlur = 22;
     fxX.beginPath(); fxX.arc(cx, iy + ih / 2, 7 + p * 5, 0, 6.29); fxX.fill();
-    fxX.shadowBlur = 0;
     spawnSparkles(cx + (Math.random() - 0.5) * 16, iy + ih / 2 + 12, "#ffd54f", 2);
     if (p >= 1) {
       sndBoom();
@@ -1912,9 +1952,7 @@ function fxLoop(ts) {
       if (pr >= 1) pt.life -= pt.decay;
       fxX.globalAlpha = Math.max(0, Math.min(1, pt.life)) * (0.75 + 0.25 * Math.sin(age / 90));
       fxX.fillStyle = pt.color;
-      fxX.shadowColor = pt.color; fxX.shadowBlur = 10;
       fxX.beginPath(); fxX.arc(pt.x, pt.y, pt.size, 0, 6.29); fxX.fill();
-      fxX.shadowBlur = 0;
       return;
     }
     pt.x += pt.vx; pt.y += pt.vy; pt.vy += pt.grav; pt.life -= pt.decay;
