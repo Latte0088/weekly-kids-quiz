@@ -171,6 +171,24 @@
   .eat-face.chewing { animation: chew .3s ease-in-out infinite alternate; }
   .eat-text { font-size: 1.15rem; font-weight: 800; color: #b05a2a; }
   .food-tray.disabled, .bento-actions.disabled { opacity: .35; pointer-events: none; }
+  /* 具が増えても「できた！」が画面外に押し出されないためのレイアウト固定:
+     弁当箱とボタンは固定し、トレイだけが残りの高さに合わせて縮む */
+  #view-bento { overflow: hidden; }
+  #view-bento .plate-row, #view-bento .bento-wrap, #view-bento .bento-actions { flex: 0 0 auto; }
+  #view-bento .food-tray { flex: 1 1 auto; min-height: 0; align-content: center; }
+  @media (max-height: 820px) {
+    #view-bento .food-tray { grid-auto-rows: minmax(0, 1fr); align-content: stretch; }
+    #view-bento .food-btn { aspect-ratio: auto; height: 100%; min-height: 0; }
+  }
+  /* 極端に背が低い画面では弁当箱自体も高さに合わせて縮める */
+  @media (max-height: 560px) {
+    #view-bento .bento-wrap { width: min(92vw, 340px, 54dvh); }
+  }
+  @media (max-height: 480px) {
+    #view-bento .bento-wrap { width: min(92vw, 300px, 46dvh); }
+    #view-bento .food-tray { gap: 4px; }
+    #view-bento #doneBtn { min-height: 48px; }
+  }
   .hanamaru { font-size: 7.2rem; line-height: 1.1; animation: hanamaru-in .7s cubic-bezier(.34,1.56,.64,1); }
   @keyframes hanamaru-in { 0% { transform: scale(.2) rotate(-30deg); opacity: 0; } 100% { transform: scale(1) rotate(-8deg); opacity: 1; } }
 
