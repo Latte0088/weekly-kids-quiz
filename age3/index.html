@@ -222,6 +222,20 @@
   .donut-btn.used { opacity: .22; pointer-events: none; }
   .donut-btn svg { width: 100%; height: 100%; }
   .donut-hint { margin-top: 10px; font-size: .95rem; font-weight: 700; color: #a4838f; }
+  .donut-modes { display: flex; gap: 10px; margin-bottom: 10px; }
+  .donut-mode-btn {
+    min-height: 56px; padding: 6px 18px; border-radius: 999px; border: 4px solid #ffd3e2; background: #fff;
+    font-family: inherit; font-size: 1.05rem; font-weight: 800; color: #a04a68; cursor: pointer; box-shadow: 0 4px 0 #f0c6d4;
+  }
+  .donut-mode-btn.sel { background: #ff7bac; border-color: #ff7bac; color: #fff; box-shadow: 0 4px 0 #d14f83; }
+  .donut-ask-text [hidden] { display: none !important; }
+  .donut-target-pic {
+    display: inline-flex; width: 54px; height: 54px; vertical-align: -14px;
+    background: #fff; border-radius: 50%; border: 3px solid #ffc7d6; padding: 4px;
+  }
+  .donut-target-pic svg { width: 100%; height: 100%; }
+  .donut-target-pic.shake { animation: shake-x .4s ease; }
+  @keyframes shake-x { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
   #donutNextBtn { background: #ff7bac; font-size: 1.4rem; padding: 10px 30px; }
   @media (max-height: 700px) {
     #view-donut { padding-top: 74px; }
@@ -326,9 +340,13 @@
   <!-- ドーナツ かぞえよう -->
   <section class="view" id="view-donut" hidden>
     <button type="button" class="home-btn" data-home>🏠<span class="hb-t">もどる</span></button>
+    <div class="donut-modes">
+      <button type="button" class="donut-mode-btn sel" id="donutModeAny">🍩 どれでも</button>
+      <button type="button" class="donut-mode-btn" id="donutModePick">🎯 おなじドーナツ</button>
+    </div>
     <div class="donut-ask">
       <div class="donut-ask-face">🐰</div>
-      <p class="donut-ask-text">ドーナツを <span class="donut-target" id="donutTargetNum">3</span> こ<br>トレーに のせてね！</p>
+      <p class="donut-ask-text"><span id="donutAskWhat">ドーナツ</span><span class="donut-target-pic" id="donutTargetPic" hidden></span>を <span class="donut-target" id="donutTargetNum">3</span> こ<br>トレーに のせてね！</p>
     </div>
     <div class="donut-tray"><div class="donut-slots" id="donutSlots"></div></div>
     <div class="donut-count">いま <span id="donutCountNum">0</span> こ</div>
@@ -795,12 +813,15 @@ function donutSVG(fl) {
   return '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="12" fill="none" stroke="#d18f3f" stroke-width="15"/><circle cx="24" cy="24" r="12.4" fill="none" stroke="' + fl.c + '" stroke-width="11.5"/>' + deco + '</svg>';
 }
 var donutTarget = 0, donutLastTarget = 0, donutCount = 0, donutLock = false;
+var donutMode = "any", donutTargetFlavor = -1, donutLastFlavor = -1, donutSource = [];
 var donutPlaced = [];
 var donutTargetNum = document.getElementById("donutTargetNum");
 var donutCountNum = document.getElementById("donutCountNum");
 var donutSlotsEl = document.getElementById("donutSlots");
 var donutSourceEl = document.getElementById("donutSource");
 var donutCelebrateEl = document.getElementById("donutCelebrate");
+var donutTargetPic = document.getElementById("donutTargetPic");
+var donutAskWhat = document.getElementById("donutAskWhat");
 function startDonutRound() {
   donutLock = false;
   donutCount = 0;
@@ -808,6 +829,27 @@ function startDonutRound() {
   donutLastTarget = donutTarget;
   donutTargetNum.textContent = donutTarget;
   donutCelebrateEl.hidden = true;
+  /* していモードでは出題ドーナツの絵を見せ、箱にはそのドーナツを必要数＋他の種類を混ぜる */
+  donutSource = [0, 1, 2, 3, 4];
+  if (donutMode === "pick") {
+    do { donutTargetFlavor = Math.floor(Math.random() * 5); } while (donutTargetFlavor === donutLastFlavor);
+    donutLastFlavor = donutTargetFlavor;
+    var others = [0, 1, 2, 3, 4].filter(function (f) { return f !== donutTargetFlavor; });
+    donutSource = [];
+    for (var k = 0; k < donutTarget; k++) donutSource.push(donutTargetFlavor);
+    for (var m = 0; m < 5 - donutTarget; m++) donutSource.push(others[m % others.length]);
+    for (var n = donutSource.length - 1; n > 0; n--) {
+      var j = Math.floor(Math.random() * (n + 1));
+      var tmp = donutSource[n]; donutSource[n] = donutSource[j]; donutSource[j] = tmp;
+    }
+    donutTargetPic.innerHTML = donutSVG(DONUT_FLAVORS[donutTargetFlavor]);
+    donutTargetPic.hidden = false;
+    donutAskWhat.hidden = true;
+  } else {
+    donutTargetFlavor = -1;
+    donutTargetPic.hidden = true;
+    donutAskWhat.hidden = false;
+  }
   donutPlaced = [];
   donutSlotsEl.innerHTML = "";
   for (var s = 0; s < donutTarget; s++) {
@@ -824,7 +866,7 @@ function startDonutRound() {
     btn.type = "button";
     btn.className = "donut-btn";
     btn.setAttribute("data-src", i);
-    btn.innerHTML = donutSVG(DONUT_FLAVORS[i]);
+    btn.innerHTML = donutSVG(DONUT_FLAVORS[donutSource[i]]);
     btn.addEventListener("click", onDonutSourceTap);
     donutSourceEl.appendChild(btn);
   }
@@ -842,7 +884,16 @@ function fillDonutSlot(src, si) {
   donutPlaced[si] = src;
   var slot = donutSlotsEl.children[si];
   slot.classList.add("filled");
-  slot.innerHTML = donutSVG(DONUT_FLAVORS[src]) + '<span class="donut-num"></span>';
+  slot.innerHTML = donutSVG(DONUT_FLAVORS[donutSource[src]]) + '<span class="donut-num"></span>';
+}
+function donutCanPlace(src) {
+  return donutMode !== "pick" || donutSource[src] === donutTargetFlavor;
+}
+function donutReject() {
+  sndPoyon();
+  donutTargetPic.classList.remove("shake");
+  void donutTargetPic.offsetWidth;
+  donutTargetPic.classList.add("shake");
 }
 function clearDonutSlot(si) {
   donutPlaced[si] = null;
@@ -872,10 +923,12 @@ function removeDonutAt(si) {
 }
 function onDonutSourceTap() {
   if (donutJustDragged || donutLock || this.classList.contains("used") || donutCount >= donutTarget) return;
+  var src = Number(this.getAttribute("data-src"));
+  ensureAudio();
+  if (!donutCanPlace(src)) { donutReject(); return; }
   var si = donutPlaced.indexOf(null);
   if (si < 0) return;
-  ensureAudio();
-  placeDonut(Number(this.getAttribute("data-src")), si);
+  placeDonut(src, si);
 }
 function onDonutSlotTap() {
   if (donutJustDragged || donutLock) return;
@@ -898,7 +951,7 @@ function clearDonutHover() {
 function startDonutDrag(e, dragSrc) {
   if (donutLock) return;
   var startX = e.clientX, startY = e.clientY, moved = false, ghost = null;
-  var flavor = dragSrc.type === "box" ? DONUT_FLAVORS[dragSrc.src] : DONUT_FLAVORS[donutPlaced[dragSrc.si]];
+  var flavor = dragSrc.type === "box" ? DONUT_FLAVORS[donutSource[dragSrc.src]] : DONUT_FLAVORS[donutSource[donutPlaced[dragSrc.si]]];
   function onMove(ev) {
     var dx = ev.clientX - startX, dy = ev.clientY - startY;
     if (!moved && Math.sqrt(dx * dx + dy * dy) < 11) return;
@@ -932,8 +985,10 @@ function startDonutDrag(e, dragSrc) {
         var r = donutSlotsEl.parentElement.getBoundingClientRect();
         if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) target = donutPlaced.indexOf(null);
       }
-      if (target >= 0 && donutCount < donutTarget) placeDonut(dragSrc.src, target);
-      else sndPoyon();
+      if (target >= 0 && donutCount < donutTarget) {
+        if (donutCanPlace(dragSrc.src)) placeDonut(dragSrc.src, target);
+        else donutReject();
+      } else sndPoyon();
     } else if (si >= 0 && si !== dragSrc.si && donutPlaced[si] === null) {
       var srcIdx = donutPlaced[dragSrc.si];
       donutCount--;
@@ -967,6 +1022,14 @@ function completeDonut() {
 }
 document.getElementById("donutNextBtn").addEventListener("click", function () { sndTap(); startDonutRound(); });
 document.querySelector('[data-goto="donut"]').addEventListener("click", startDonutRound);
+function setDonutMode(m) {
+  donutMode = m;
+  document.getElementById("donutModeAny").classList.toggle("sel", m === "any");
+  document.getElementById("donutModePick").classList.toggle("sel", m === "pick");
+  startDonutRound();
+}
+document.getElementById("donutModeAny").addEventListener("click", function () { ensureAudio(); sndTap(); setDonutMode("any"); });
+document.getElementById("donutModePick").addEventListener("click", function () { ensureAudio(); sndTap(); setDonutMode("pick"); });
 
 /* ================= どうぶつ かくれんぼ ================= */
 function eyes(x1, x2, y, r) {

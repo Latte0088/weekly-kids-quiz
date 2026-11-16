@@ -106,6 +106,40 @@ test.describe("ドーナツ かぞえよう", () => {
     await expect(src).not.toHaveClass(/used/);
   });
 
+  test("していモード：絵で指定されたドーナツだけが乗る", async ({ page }) => {
+    await openDonut(page);
+    await page.click("#donutModePick");
+    await expect(page.locator("#donutTargetPic")).toBeVisible();
+    await expect(page.locator("#donutAskWhat")).toBeHidden();
+    const target = await targetOf(page);
+    const picHTML = await page.locator("#donutTargetPic").innerHTML();
+    const src = page.locator("#donutSource .donut-btn");
+    await expect(src).toHaveCount(5);
+    const htmls = await src.evaluateAll((els) => els.map((el) => el.innerHTML));
+    const matchIdx = htmls.map((h, i) => (h === picHTML ? i : -1)).filter((i) => i >= 0);
+    expect(matchIdx.length).toBeGreaterThanOrEqual(target);
+    const wrongIdx = htmls.findIndex((h) => h !== picHTML);
+    if (wrongIdx >= 0) {
+      await src.nth(wrongIdx).click();
+      await expect(page.locator("#donutCountNum")).toHaveText("0");
+      await expect(page.locator("#donutSlots .donut-slot.filled")).toHaveCount(0);
+    }
+    for (const i of matchIdx.slice(0, target)) await src.nth(i).click();
+    await expect(page.locator("#donutCountNum")).toHaveText(String(target));
+    await expect(page.locator("#donutCelebrate")).toBeVisible();
+  });
+
+  test("どれでもモードに戻すと絵が消えて何でも乗る", async ({ page }) => {
+    await openDonut(page);
+    await page.click("#donutModePick");
+    await expect(page.locator("#donutTargetPic")).toBeVisible();
+    await page.click("#donutModeAny");
+    await expect(page.locator("#donutTargetPic")).toBeHidden();
+    await expect(page.locator("#donutAskWhat")).toBeVisible();
+    await page.locator("#donutSource .donut-btn").first().click();
+    await expect(page.locator("#donutCountNum")).toHaveText("1");
+  });
+
   test("「つぎの もんだい」で違う数の問題になる", async ({ page }) => {
     await openDonut(page);
     const target = await targetOf(page);
