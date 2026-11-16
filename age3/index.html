@@ -49,7 +49,7 @@
   .hub-card:active { transform: scale(.96); }
   .hub-card svg { width: 118px; height: 96px; }
   .hub-card .hc-name { font-size: 1.35rem; font-weight: 800; }
-  .hub-card.c1 { background: #fff8ee; } .hub-card.c2 { background: #f0fbf0; } .hub-card.c3 { background: #eef2ff; }
+  .hub-card.c1 { background: #fff8ee; } .hub-card.c2 { background: #f0fbf0; } .hub-card.c3 { background: #eef2ff; } .hub-card.c4 { background: #fff0f5; }
 
   /* ---------- おべんとう ---------- */
   #view-bento { background: linear-gradient(180deg, #fff8ee, #ffedd5); padding: 84px 14px 14px; align-items: center; }
@@ -189,6 +189,47 @@
     #view-bento .food-tray { gap: 4px; }
     #view-bento #doneBtn { min-height: 48px; }
   }
+
+  /* ---------- ドーナツ かぞえよう ---------- */
+  #view-donut { background: linear-gradient(180deg, #fff5f7, #ffe3ec); padding: 84px 14px 14px; align-items: center; overflow: hidden; }
+  .donut-ask { display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,.85); border-radius: 999px; padding: 8px 24px 8px 14px; box-shadow: 0 4px 0 rgba(230,190,200,.6); }
+  .donut-ask-face { font-size: 3rem; line-height: 1; }
+  .donut-ask-text { font-size: 1.25rem; font-weight: 800; line-height: 1.35; }
+  .donut-target { font-size: 2.4rem; color: #e2603f; }
+  .donut-tray { margin-top: 18px; width: min(94vw, 460px); background: linear-gradient(180deg, #ffffff, #efe7d6); border-radius: 22px; padding: 16px 12px; box-shadow: 0 8px 0 #cbbfa5, 0 14px 24px rgba(0,0,0,.12); }
+  .donut-slots { display: flex; gap: 8px; justify-content: center; }
+  .donut-slot {
+    width: min(76px, 16.5vw); height: min(76px, 16.5vw); border-radius: 50%;
+    border: 3px dashed #d8c9a8; background: rgba(255,255,255,.55);
+    display: flex; align-items: center; justify-content: center; position: relative;
+  }
+  .donut-slot.filled { border-style: solid; border-color: #ffc7d6; background: #fff; cursor: pointer; animation: pop-in .35s cubic-bezier(.34,1.56,.64,1); }
+  .donut-slot.hover { border-style: solid; border-color: #ff7bac; background: #ffeef5; }
+  .donut-slot svg { width: 94%; height: 94%; }
+  .donut-num {
+    position: absolute; top: -9px; right: -9px; width: 28px; height: 28px; border-radius: 50%;
+    background: #ff7bac; color: #fff; font-weight: 800; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 0 rgba(0,0,0,.15);
+  }
+  .donut-count { margin-top: 16px; font-size: 1.3rem; font-weight: 800; background: #fff; border-radius: 999px; padding: 6px 24px; box-shadow: 0 4px 0 #ecd9b8; }
+  .donut-count span { font-size: 1.9rem; color: #e2603f; }
+  .donut-source { margin-top: auto; display: flex; gap: 8px; justify-content: center; width: min(94vw, 460px); background: rgba(255,255,255,.65); border-radius: 22px; padding: 12px; }
+  .donut-btn {
+    width: min(76px, 16.5vw); height: min(76px, 16.5vw); border-radius: 20px; border: 4px solid #ffd3e2; background: #fff;
+    cursor: pointer; box-shadow: 0 5px 0 #f0c6d4; display: flex; align-items: center; justify-content: center; padding: 5px;
+  }
+  .donut-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #f0c6d4; }
+  .donut-btn.used { opacity: .22; pointer-events: none; }
+  .donut-btn svg { width: 100%; height: 100%; }
+  .donut-hint { margin-top: 10px; font-size: .95rem; font-weight: 700; color: #a4838f; }
+  #donutNextBtn { background: #ff7bac; font-size: 1.4rem; padding: 10px 30px; }
+  @media (max-height: 700px) {
+    #view-donut { padding-top: 74px; }
+    .donut-ask-face { font-size: 2.4rem; }
+    .donut-ask-text { font-size: 1.1rem; }
+    .donut-tray { margin-top: 10px; padding: 10px 8px; }
+    .donut-count { margin-top: 10px; }
+  }
   .hanamaru { font-size: 7.2rem; line-height: 1.1; animation: hanamaru-in .7s cubic-bezier(.34,1.56,.64,1); }
   @keyframes hanamaru-in { 0% { transform: scale(.2) rotate(-30deg); opacity: 0; } 100% { transform: scale(1) rotate(-8deg); opacity: 1; } }
 
@@ -257,6 +298,10 @@
         <svg viewBox="0 0 120 96" aria-hidden="true"><rect x="4" y="4" width="112" height="88" rx="14" fill="#141a4d"/><circle cx="88" cy="20" r="2.4" fill="#fff"/><circle cx="20" cy="16" r="2" fill="#fff"/><circle cx="38" cy="30" r="1.8" fill="#fff"/><g stroke="#ffd54f" stroke-width="3" stroke-linecap="round"><line x1="60" y1="18" x2="60" y2="34"/><line x1="60" y1="66" x2="60" y2="50"/><line x1="36" y1="42" x2="52" y2="42"/><line x1="68" y1="42" x2="84" y2="42"/><line x1="43" y1="25" x2="54" y2="36"/><line x1="66" y1="48" x2="77" y2="59"/><line x1="77" y1="25" x2="66" y2="36"/><line x1="54" y1="48" x2="43" y2="59"/></g><circle cx="60" cy="42" r="5" fill="#ff8a80"/><circle cx="94" cy="66" r="3.4" fill="#82b1ff"/><circle cx="26" cy="72" r="3" fill="#ea80fc"/></svg>
         <span class="hc-name">🎆 キラキラ はなび</span>
       </button>
+      <button type="button" class="hub-card c4" data-goto="donut">
+        <svg viewBox="0 0 120 96" aria-hidden="true"><circle cx="60" cy="48" r="29" fill="none" stroke="#d18f3f" stroke-width="18"/><circle cx="60" cy="48" r="29" fill="none" stroke="#ff7bac" stroke-width="12"/><g stroke-linecap="round" stroke-width="3.4"><line x1="40" y1="34" x2="46" y2="38" stroke="#ffd93d"/><line x1="72" y1="28" x2="78" y2="33" stroke="#42a5f5"/><line x1="80" y1="58" x2="86" y2="54" stroke="#66bb6a"/><line x1="44" y1="64" x2="50" y2="60" stroke="#ff5252"/><line x1="60" y1="70" x2="66" y2="66" stroke="#ab47bc"/></g></svg>
+        <span class="hc-name">🍩 ドーナツ かぞえよう</span>
+      </button>
     </div>
   </section>
 
@@ -275,6 +320,24 @@
       <div class="mogu-face" id="moguFace">😋</div>
       <div class="mogu-text" id="moguText">モグモグ… おいしい！</div>
       <button type="button" class="big-btn" id="againBtn">🔄 もういっかい</button>
+    </div>
+  </section>
+
+  <!-- ドーナツ かぞえよう -->
+  <section class="view" id="view-donut" hidden>
+    <button type="button" class="home-btn" data-home>🏠<span class="hb-t">もどる</span></button>
+    <div class="donut-ask">
+      <div class="donut-ask-face">🐰</div>
+      <p class="donut-ask-text">ドーナツを <span class="donut-target" id="donutTargetNum">3</span> こ<br>トレーに のせてね！</p>
+    </div>
+    <div class="donut-tray"><div class="donut-slots" id="donutSlots"></div></div>
+    <div class="donut-count">いま <span id="donutCountNum">0</span> こ</div>
+    <div class="donut-source" id="donutSource"></div>
+    <p class="donut-hint">ドーナツを ひっぱって トレーに のせてね（タップでも のるよ）</p>
+    <div class="celebrate" id="donutCelebrate" hidden>
+      <div class="hanamaru">💮</div>
+      <div class="mogu-text" id="donutDoneText">やったー！</div>
+      <button type="button" class="big-btn" id="donutNextBtn">🍩 つぎの もんだい</button>
     </div>
   </section>
 
@@ -418,7 +481,7 @@ function sndWhoosh() {
 function sndBoom() { noiseHit(0, 0.9, 420, 0.85); tone(120, 0, 0.8, "sine", 0.7, 38); }
 
 /* ================= 画面切り替え ================= */
-var views = { hub: document.getElementById("view-hub"), bento: document.getElementById("view-bento"), animal: document.getElementById("view-animal"), draw: document.getElementById("view-draw") };
+var views = { hub: document.getElementById("view-hub"), bento: document.getElementById("view-bento"), donut: document.getElementById("view-donut"), animal: document.getElementById("view-animal"), draw: document.getElementById("view-draw") };
 function show(name) {
   Object.keys(views).forEach(function (k) { views[k].hidden = k !== name; });
   if (name === "draw") requestAnimationFrame(sizeCanvases);
@@ -708,6 +771,202 @@ bentoGrid.addEventListener("pointerdown", function (e) {
   if (bentoCells[ci] === null) return;
   startDrag(e, { type: "cell", ci: ci });
 });
+
+/* ================= ドーナツ かぞえよう ================= */
+var DONUT_FLAVORS = [
+  { c: "#ff7bac", s: "sprinkle" },
+  { c: "#7b4a2b", s: "drizzle" },
+  { c: "#fff3e0", s: "sprinkle" },
+  { c: "#8bc34a", s: "plain" },
+  { c: "#ffb74d", s: "plain" }
+];
+function donutSVG(fl) {
+  var deco = "";
+  if (fl.s === "sprinkle") {
+    var cols = ["#ff5252", "#ffd93d", "#42a5f5", "#66bb6a", "#ab47bc", "#ffffff"];
+    for (var i = 0; i < 7; i++) {
+      var a = (i / 7) * Math.PI * 2 + 0.4;
+      var x = 24 + Math.cos(a) * 12.3, y = 24 + Math.sin(a) * 12.3;
+      deco += '<rect x="' + (x - 1.8).toFixed(1) + '" y="' + (y - 0.9).toFixed(1) + '" width="3.6" height="1.8" rx="0.9" fill="' + cols[i % cols.length] + '" transform="rotate(' + Math.round(a * 180 / Math.PI + 40) + ' ' + x.toFixed(1) + ' ' + y.toFixed(1) + ')"/>';
+    }
+  } else if (fl.s === "drizzle") {
+    deco = '<g stroke="#ffffff" stroke-width="1.7" fill="none" stroke-linecap="round" opacity="0.85"><path d="M13 16 Q19 11 25 15"/><path d="M11 25 Q17 30 23 27"/><path d="M26 33 Q32 29 36 32"/><path d="M28 13 Q34 16 37 21"/></g>';
+  }
+  return '<svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="12" fill="none" stroke="#d18f3f" stroke-width="15"/><circle cx="24" cy="24" r="12.4" fill="none" stroke="' + fl.c + '" stroke-width="11.5"/>' + deco + '</svg>';
+}
+var donutTarget = 0, donutLastTarget = 0, donutCount = 0, donutLock = false;
+var donutPlaced = [];
+var donutTargetNum = document.getElementById("donutTargetNum");
+var donutCountNum = document.getElementById("donutCountNum");
+var donutSlotsEl = document.getElementById("donutSlots");
+var donutSourceEl = document.getElementById("donutSource");
+var donutCelebrateEl = document.getElementById("donutCelebrate");
+function startDonutRound() {
+  donutLock = false;
+  donutCount = 0;
+  do { donutTarget = 1 + Math.floor(Math.random() * 5); } while (donutTarget === donutLastTarget);
+  donutLastTarget = donutTarget;
+  donutTargetNum.textContent = donutTarget;
+  donutCelebrateEl.hidden = true;
+  donutPlaced = [];
+  donutSlotsEl.innerHTML = "";
+  for (var s = 0; s < donutTarget; s++) {
+    donutPlaced.push(null);
+    var slot = document.createElement("div");
+    slot.className = "donut-slot";
+    slot.setAttribute("data-slot", s);
+    slot.addEventListener("click", onDonutSlotTap);
+    donutSlotsEl.appendChild(slot);
+  }
+  donutSourceEl.innerHTML = "";
+  for (var i = 0; i < 5; i++) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "donut-btn";
+    btn.setAttribute("data-src", i);
+    btn.innerHTML = donutSVG(DONUT_FLAVORS[i]);
+    btn.addEventListener("click", onDonutSourceTap);
+    donutSourceEl.appendChild(btn);
+  }
+  refreshDonut();
+}
+function refreshDonut() {
+  donutCountNum.textContent = donutCount;
+  var n = 0;
+  Array.prototype.forEach.call(donutSlotsEl.children, function (slot, si) {
+    var badge = slot.querySelector(".donut-num");
+    if (badge && donutPlaced[si] !== null) { n++; badge.textContent = n; }
+  });
+}
+function fillDonutSlot(src, si) {
+  donutPlaced[si] = src;
+  var slot = donutSlotsEl.children[si];
+  slot.classList.add("filled");
+  slot.innerHTML = donutSVG(DONUT_FLAVORS[src]) + '<span class="donut-num"></span>';
+}
+function clearDonutSlot(si) {
+  donutPlaced[si] = null;
+  var slot = donutSlotsEl.children[si];
+  slot.classList.remove("filled");
+  slot.innerHTML = "";
+}
+function placeDonut(src, si) {
+  donutCount++;
+  donutSourceEl.children[src].classList.add("used");
+  fillDonutSlot(src, si);
+  tone(PENTA[donutCount - 1], 0, 0.3, "sine", 0.45);
+  sndPop();
+  refreshDonut();
+  if (donutCount >= donutTarget) {
+    donutLock = true;
+    setTimeout(completeDonut, 500);
+  }
+}
+function removeDonutAt(si) {
+  var src = donutPlaced[si];
+  donutCount--;
+  donutSourceEl.children[src].classList.remove("used");
+  clearDonutSlot(si);
+  sndRemove();
+  refreshDonut();
+}
+function onDonutSourceTap() {
+  if (donutJustDragged || donutLock || this.classList.contains("used") || donutCount >= donutTarget) return;
+  var si = donutPlaced.indexOf(null);
+  if (si < 0) return;
+  ensureAudio();
+  placeDonut(Number(this.getAttribute("data-src")), si);
+}
+function onDonutSlotTap() {
+  if (donutJustDragged || donutLock) return;
+  var si = Number(this.getAttribute("data-slot"));
+  if (donutPlaced[si] === null || donutPlaced[si] === undefined) return;
+  ensureAudio();
+  removeDonutAt(si);
+}
+/* ---------- ドーナツ：ドラッグ配置（タップでも乗せられる） ---------- */
+var donutJustDragged = false;
+function donutSlotFromPoint(x, y) {
+  var el = document.elementFromPoint(x, y);
+  var slot = el && el.closest ? el.closest(".donut-slot") : null;
+  if (!slot || slot.parentElement !== donutSlotsEl) return -1;
+  return Number(slot.getAttribute("data-slot"));
+}
+function clearDonutHover() {
+  Array.prototype.forEach.call(donutSlotsEl.children, function (s) { s.classList.remove("hover"); });
+}
+function startDonutDrag(e, dragSrc) {
+  if (donutLock) return;
+  var startX = e.clientX, startY = e.clientY, moved = false, ghost = null;
+  var flavor = dragSrc.type === "box" ? DONUT_FLAVORS[dragSrc.src] : DONUT_FLAVORS[donutPlaced[dragSrc.si]];
+  function onMove(ev) {
+    var dx = ev.clientX - startX, dy = ev.clientY - startY;
+    if (!moved && Math.sqrt(dx * dx + dy * dy) < 11) return;
+    if (!moved) {
+      moved = true;
+      donutJustDragged = true;
+      ghost = document.createElement("div");
+      ghost.className = "drag-ghost";
+      ghost.innerHTML = donutSVG(flavor);
+      document.body.appendChild(ghost);
+    }
+    ghost.style.left = ev.clientX + "px";
+    ghost.style.top = ev.clientY + "px";
+    var si = donutSlotFromPoint(ev.clientX, ev.clientY);
+    clearDonutHover();
+    if (si >= 0 && donutPlaced[si] === null) donutSlotsEl.children[si].classList.add("hover");
+    ev.preventDefault();
+  }
+  function onUp(ev) {
+    window.removeEventListener("pointermove", onMove);
+    window.removeEventListener("pointerup", onUp);
+    if (!moved) return;
+    if (ghost) ghost.remove();
+    clearDonutHover();
+    ensureAudio();
+    var si = donutSlotFromPoint(ev.clientX, ev.clientY);
+    if (dragSrc.type === "box") {
+      var target = -1;
+      if (si >= 0 && donutPlaced[si] === null) target = si;
+      else {
+        var r = donutSlotsEl.parentElement.getBoundingClientRect();
+        if (ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom) target = donutPlaced.indexOf(null);
+      }
+      if (target >= 0 && donutCount < donutTarget) placeDonut(dragSrc.src, target);
+      else sndPoyon();
+    } else if (si >= 0 && si !== dragSrc.si && donutPlaced[si] === null) {
+      var srcIdx = donutPlaced[dragSrc.si];
+      donutCount--;
+      donutSourceEl.children[srcIdx].classList.remove("used");
+      clearDonutSlot(dragSrc.si);
+      placeDonut(srcIdx, si);
+    } else if (si !== dragSrc.si) {
+      removeDonutAt(dragSrc.si);
+    }
+    setTimeout(function () { donutJustDragged = false; }, 80);
+  }
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+}
+donutSourceEl.addEventListener("pointerdown", function (e) {
+  var btn = e.target.closest ? e.target.closest(".donut-btn") : null;
+  if (!btn || btn.classList.contains("used")) return;
+  startDonutDrag(e, { type: "box", src: Number(btn.getAttribute("data-src")) });
+});
+donutSlotsEl.addEventListener("pointerdown", function (e) {
+  var slot = e.target.closest ? e.target.closest(".donut-slot") : null;
+  if (!slot || !slot.classList.contains("filled")) return;
+  startDonutDrag(e, { type: "slot", si: Number(slot.getAttribute("data-slot")) });
+});
+function completeDonut() {
+  if (views.donut.hidden) return;
+  document.getElementById("donutDoneText").textContent = "やったー！ " + donutTarget + "こ のせられたね！";
+  donutCelebrateEl.hidden = false;
+  sndFanfare();
+  confettiBurst(donutCelebrateEl);
+}
+document.getElementById("donutNextBtn").addEventListener("click", function () { sndTap(); startDonutRound(); });
+document.querySelector('[data-goto="donut"]').addEventListener("click", startDonutRound);
 
 /* ================= どうぶつ かくれんぼ ================= */
 function eyes(x1, x2, y, r) {
