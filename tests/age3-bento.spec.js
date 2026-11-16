@@ -69,6 +69,25 @@ test.describe("おべんとうづくり", () => {
     await expect(page.locator("#celebrate")).toBeVisible();
   });
 
+  test("短い画面（360×640・375×560）でも「できた！」と全おかずが画面内にある", async ({ page }) => {
+    for (const size of [{ width: 360, height: 640 }, { width: 375, height: 560 }]) {
+      await page.setViewportSize(size);
+      await openBento(page);
+      const done = await page.locator("#doneBtn").boundingBox();
+      expect(done).not.toBeNull();
+      expect(done.y + done.height).toBeLessThanOrEqual(size.height);
+      const trayBox = await page.locator("#foodTray").boundingBox();
+      expect(trayBox).not.toBeNull();
+      expect(trayBox.y + trayBox.height).toBeLessThanOrEqual(size.height);
+      await fillCells(page, [0, 1, 2, 3]);
+      await expect(page.locator("#doneBtn")).toBeEnabled();
+      await page.click("#doneBtn");
+      await expect(page.locator("#eatBanner")).toBeVisible();
+      await page.click('[data-home]');
+      await expect(page.locator("#view-bento")).toBeHidden();
+    }
+  });
+
   test("あーん：もういっかい後の2回目も完了する（リプレイ回帰）", async ({ page }) => {
     await openBento(page);
     await fillCells(page, [0, 1, 2, 3]);
