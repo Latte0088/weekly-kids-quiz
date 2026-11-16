@@ -649,6 +649,43 @@ function damagePlayer() {
 // ==========================================
 // 4. リッチ描画ヘルパー関数
 // ==========================================
+/* 星雲は大きな放射グラデーションで毎フレーム描くと高くつくため、
+   色×半径ごとに一度だけビットマップ化して drawImage で使い回す */
+const nebulaSprites = {};
+function nebulaSprite(n) {
+  const key = n.color + '|' + n.r;
+  if (nebulaSprites[key]) return nebulaSprites[key];
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = n.r * 2;
+  const g2 = cv.getContext('2d');
+  const grad = g2.createRadialGradient(n.r, n.r, 10, n.r, n.r, n.r);
+  grad.addColorStop(0, n.color);
+  grad.addColorStop(1, 'rgba(4, 6, 16, 0)');
+  g2.fillStyle = grad;
+  g2.fillRect(0, 0, cv.width, cv.height);
+  nebulaSprites[key] = cv;
+  return cv;
+}
+
+/* 自機の弾は色ごとに一度だけビットマップ化して使い回す（毎フレームの roundRect 生成を避ける） */
+const bulletSprites = {};
+function bulletSprite(color) {
+  if (bulletSprites[color]) return bulletSprites[color];
+  const cv = document.createElement('canvas');
+  cv.width = 10;
+  cv.height = 28;
+  const g2 = cv.getContext('2d');
+  g2.scale(2, 2);
+  g2.fillStyle = color;
+  g2.beginPath();
+  g2.roundRect(0, 0, 5, 14, 2.5);
+  g2.fill();
+  g2.fillStyle = '#ffffff';
+  g2.fillRect(1.5, 2, 2, 10);
+  bulletSprites[color] = cv;
+  return cv;
+}
+
 function drawBackground() {
   const speedBoost = boss ? 1.8 : (gameState === 'TITLE' ? 0.7 : 1.0);
 
@@ -658,13 +695,7 @@ function drawBackground() {
       n.y = -n.r;
       n.x = Math.random() * canvas.width;
     }
-    const grad = ctx.createRadialGradient(n.x, n.y, 10, n.x, n.y, n.r);
-    grad.addColorStop(0, n.color);
-    grad.addColorStop(1, 'rgba(4, 6, 16, 0)');
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.drawImage(nebulaSprite(n), n.x - n.r, n.y - n.r);
   });
 
   stars.forEach(s => {
@@ -766,11 +797,13 @@ function drawPlayer(drawX = player.x, drawY = player.y) {
   ctx.lineTo(0, 14);
   ctx.stroke();
 
-  const canopyGrad = ctx.createLinearGradient(0, -10, 0, 4);
-  canopyGrad.addColorStop(0, '#ffffff');
-  canopyGrad.addColorStop(0.5, '#ffaa22');
-  canopyGrad.addColorStop(1, '#aa4400');
-  ctx.fillStyle = canopyGrad;
+  if (!drawPlayer.canopyGrad) {
+    drawPlayer.canopyGrad = ctx.createLinearGradient(0, -10, 0, 4);
+    drawPlayer.canopyGrad.addColorStop(0, '#ffffff');
+    drawPlayer.canopyGrad.addColorStop(0.5, '#ffaa22');
+    drawPlayer.canopyGrad.addColorStop(1, '#aa4400');
+  }
+  ctx.fillStyle = drawPlayer.canopyGrad;
   ctx.beginPath();
   ctx.ellipse(0, -3, 3.2, 7, 0, 0, Math.PI * 2);
   ctx.fill();
@@ -850,6 +883,27 @@ function drawEnemy(e) {
   ctx.restore();
 }
 
+/* ボスのコア（本体・サブコア共通）の放射グラデーションは毎フレーム作らず、
+   一度だけビットマップ化して脈動サイズに合わせて拡大縮小して描く */
+let bossCoreSpriteCache = null;
+function bossCoreSprite() {
+  if (bossCoreSpriteCache) return bossCoreSpriteCache;
+  const R = 18;
+  const cv = document.createElement('canvas');
+  cv.width = cv.height = R * 2;
+  const g2 = cv.getContext('2d');
+  const grad = g2.createRadialGradient(R, R, 2, R, R, R);
+  grad.addColorStop(0, '#ffffff');
+  grad.addColorStop(0.5, '#ffaa22');
+  grad.addColorStop(1, '#ff2200');
+  g2.fillStyle = grad;
+  g2.beginPath();
+  g2.arc(R, R, R, 0, Math.PI * 2);
+  g2.fill();
+  bossCoreSpriteCache = cv;
+  return cv;
+}
+
 function drawBoss(b) {
   ctx.save();
   ctx.translate(b.x, b.y);
@@ -891,14 +945,7 @@ function drawBoss(b) {
     ctx.lineWidth = 2;
     ctx.stroke();
     const sp = 6 + Math.sin(frameCount * 0.15 + sc.dx) * 1.5;
-    const sg = ctx.createRadialGradient(sc.dx, sc.y, 1, sc.dx, sc.y, sp);
-    sg.addColorStop(0, '#ffffff');
-    sg.addColorStop(0.5, '#ffaa22');
-    sg.addColorStop(1, '#ff2200');
-    ctx.fillStyle = sg;
-    ctx.beginPath();
-    ctx.arc(sc.dx, sc.y, sp, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.drawImage(bossCoreSprite(), sc.dx - sp, sc.y - sp, sp * 2, sp * 2);
   });
 
   // 本体: 側面パーツ + 八角形（色は形態で変わる）
@@ -943,14 +990,7 @@ function drawBoss(b) {
   }
 
   const pulse = 15 + Math.sin(frameCount * 0.15) * 3;
-  const coreGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, pulse);
-  coreGrad.addColorStop(0, '#ffffff');
-  coreGrad.addColorStop(0.5, '#ffaa22');
-  coreGrad.addColorStop(1, '#ff2200');
-  ctx.fillStyle = coreGrad;
-  ctx.beginPath();
-  ctx.arc(0, 0, pulse, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.drawImage(bossCoreSprite(), -pulse, -pulse, pulse * 2, pulse * 2);
 
   // 回転シールド（形態5以降）: 本体の周りを回る3つの弧（見た目のみ）
   if (b.form >= 5) {
@@ -1137,17 +1177,12 @@ function update() {
       }
     }
 
+    const bulletImg = bulletSprite((player.powerTimer > 0 && runPowered) ? '#ff66dd' : ((player.powerTimer > 0 || runPowered) ? '#55ff99' : '#00eeff'));
     bullets = bullets.filter(b => {
       b.x += b.vx;
       b.y += b.vy;
 
-      ctx.fillStyle = (player.powerTimer > 0 && runPowered) ? '#ff66dd' : ((player.powerTimer > 0 || runPowered) ? '#55ff99' : '#00eeff');
-      ctx.beginPath();
-      ctx.roundRect(b.x - 2.5, b.y - 7, 5, 14, 2.5);
-      ctx.fill();
-
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(b.x - 1, b.y - 5, 2, 10);
+      ctx.drawImage(bulletImg, b.x - 2.5, b.y - 7, 5, 14);
 
       return b.y > -15 && b.x > -15 && b.x < canvas.width + 15;
     });
@@ -1165,7 +1200,8 @@ function update() {
       }
       item.y += item.speed;
 
-      if (Math.hypot(item.x - player.x, item.y - player.y) < item.r + player.r) {
+      const idx2 = item.x - player.x, idy2 = item.y - player.y, irr = item.r + player.r;
+      if (idx2 * idx2 + idy2 * idy2 < irr * irr) {
         if (item.type === 'power') {
           playPowerUpSound(false);
           player.powerTimer = 480;
@@ -1206,7 +1242,8 @@ function update() {
 
       for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
-        if (Math.hypot(e.x - b.x, e.y - b.y) < e.r + b.r) {
+        const cdx = e.x - b.x, cdy = e.y - b.y, crr = e.r + b.r;
+        if (cdx * cdx + cdy * cdy < crr * crr) {
           bullets.splice(i, 1);
           e.hp -= (b.dmg || 1);
           e.hitFlash = 4;
@@ -1243,7 +1280,8 @@ function update() {
         }
       }
 
-      if (Math.hypot(e.x - player.x, e.y - player.y) < e.r + player.r - 4) {
+      const pdx = e.x - player.x, pdy = e.y - player.y, prr = e.r + player.r - 4;
+      if (pdx * pdx + pdy * pdy < prr * prr) {
         damagePlayer();
         return false;
       }
@@ -1305,7 +1343,8 @@ function update() {
         let hitSubCore = false;
         for (let si = boss.subCores.length - 1; si >= 0; si--) {
           const sc = boss.subCores[si];
-          if (Math.hypot(boss.x + sc.dx - b.x, boss.y + sc.y - b.y) < sc.r + b.r) {
+          const sdx = boss.x + sc.dx - b.x, sdy = boss.y + sc.y - b.y, srr = sc.r + b.r;
+          if (sdx * sdx + sdy * sdy < srr * srr) {
             bullets.splice(i, 1);
             hitSubCore = true;
             sc.hp -= (b.dmg || 1);
@@ -1323,7 +1362,8 @@ function update() {
           }
         }
         if (hitSubCore) continue;
-        if (Math.hypot(boss.x - b.x, boss.y - b.y) < boss.r + b.r) {
+        const bdx = boss.x - b.x, bdy = boss.y - b.y, brr = boss.r + b.r;
+        if (bdx * bdx + bdy * bdy < brr * brr) {
           bullets.splice(i, 1);
           boss.hp -= (b.dmg || 1);
           boss.hitFlash = 3;
@@ -1359,8 +1399,9 @@ function update() {
         }
       }
 
-      if (boss && Math.hypot(boss.x - player.x, boss.y - player.y) < boss.r + player.r - 6) {
-        damagePlayer();
+      if (boss) {
+        const kdx = boss.x - player.x, kdy = boss.y - player.y, krr = boss.r + player.r - 6;
+        if (kdx * kdx + kdy * kdy < krr * krr) damagePlayer();
       }
 
       if (boss) drawBoss(boss);
@@ -1370,7 +1411,8 @@ function update() {
       eb.x += eb.vx;
       eb.y += eb.vy;
 
-      if (Math.hypot(eb.x - player.x, eb.y - player.y) < eb.r + player.r - 5) {
+      const edx = eb.x - player.x, edy = eb.y - player.y, err = eb.r + player.r - 5;
+      if (edx * edx + edy * edy < err * err) {
         damagePlayer();
         return false;
       }
