@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>だい4かい クイズ | 小学2年生の家庭学習教材</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+
+      <main id="view-quiz">
+        <div class="quiz-top">
+          <button class="back-btn" id="backHome" type="button">← もくじへ もどる</button>
+          <div class="progress-box">
+            <span class="qcount" id="qCount"></span>
+            <span class="stars" id="progressStars" aria-label="あつめた ほし"></span>
+          </div>
+        </div>
+
+        <section class="question-card" id="questionCard">
+          <span class="cat-chip" id="catChip"></span>
+          <div class="q-illust" id="qIllust" aria-hidden="true"></div>
+          <p class="q-text" id="qText"></p>
+          <p class="q-sub" id="qSub"></p>
+          <div class="choices" id="choices"></div>
+
+          <div class="feedback try" id="feedbackTry" hidden>
+            <p class="big">おしい！😮</p>
+            <p id="hintText"></p>
+          </div>
+
+          <div id="correctArea" hidden>
+            <div class="feedback good">
+              <p class="big" id="praiseText">ピンポーン！すごい！🎉</p>
+              <p>やったね！<ruby>正解<rt>せいかい</rt></ruby>だよ。</p>
+            </div>
+            <div class="fact-box">
+              <p class="fact-head">💡 へぇ〜！まめちしき</p>
+              <p id="factText"></p>
+            </div>
+            <button class="next-btn" id="nextBtn" type="button"></button>
+          </div>
+        </section>
+      </main>
+
+      <main id="view-result" hidden>
+        <section class="result-card" id="resultCard">
+          <div class="medal-wrap">
+            <svg width="150" height="170" viewBox="0 0 150 170" role="img" aria-label="メダルの イラスト">
+              <path d="M52 0 L75 52 L62 60 L38 8 Z" fill="#ff6b4a"/>
+              <path d="M98 0 L75 52 L88 60 L112 8 Z" fill="#3d9bff"/>
+              <circle id="medalCircle" cx="75" cy="105" r="52" fill="#f5a623"/>
+              <circle cx="75" cy="105" r="42" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="5 7" opacity="0.85"/>
+              <path d="M75 76 L84 96 L105 97 L89 110 L94 131 L75 119 L56 131 L61 110 L45 97 L66 96 Z" fill="#ffffff"/>
+            </svg>
+          </div>
+          <h2>クイズ クリア！🎉</h2>
+          <div class="result-stars" id="resultStars"></div>
+          <p class="result-msg" id="medalName"></p>
+          <p class="result-msg" id="resultMsg"></p>
+          <div class="result-btns">
+            <button class="again-btn" id="againBtn" type="button">🔁 もういちど あそぶ</button>
+            <button class="home-btn" id="resultHomeBtn" type="button">📚 もくじへ もどる</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      var QUIZ_DATA = [
+        {
+          cat: "🚌 バス さんすう",
+          catClass: "c1",
+          illust: "🚌",
+          q: "バスに 5にん のって います。つぎの ていりゅうじょで 3にん おりて、2にん のりました。いま バスには なんにん のって いるでしょう？",
+          sub: "おりる ひとを ひいて、のる ひとを たして みよう。",
+          choices: [
+            { t: "3にん", ok: false },
+            { t: "4にん", ok: true },
+            { t: "5にん", ok: false },
+            { t: "7にん", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：5から 3を ひいて、2を たして みよう。",
+          fact: "5 − 3 + 2 = 4。いま バスには 4にん！バスでは、おりる ひとが さき、のる ひとは あと、という きまりが あるよ。みんなが スムーズに うごける くふうだね！"
+        },
+        {
+          cat: "📄 おりがみ ひらめき",
+          catClass: "c2",
+          illust: "📄",
+          q: "おりがみ 1まいを はんぶんに おります。もういちど はんぶんに おると、かさなった かみは なんまいでしょう？",
+          sub: "おりがみを おるたびに、かみは なんまい かさなるかな？",
+          choices: [
+            { t: "2まい", ok: false },
+            { t: "3まい", ok: false },
+            { t: "4まい", ok: true },
+            { t: "8まい", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：おるたびに、かさなる まいかずは 2ばいに なるよ。",
+          fact: "1かい おると 2まい、もう1かい おると 4まい！おるたびに 2ばいずつ ふえるんだね。3かい おると 8まいになるよ。ほんとうの おりがみで おって、かぞえて みよう！"
+        },
+        {
+          cat: "📰 ことば クイズ",
+          catClass: "c3",
+          illust: "📰",
+          q: "うえから よんでも、したから よんでも、おなじに よめる ことばは どれでしょう？",
+          sub: "「しんぶんし」を ぎゃくから よんで みよう。",
+          choices: [
+            { t: "しんぶんし", ok: true },
+            { t: "くるま", ok: false },
+            { t: "でんしゃ", ok: false },
+            { t: "とけい", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：ぎゃくから よんでも おなじに なる ことばを さがして みよう。",
+          fact: "「しんぶんし」は、ぎゃくから よんでも「しんぶんし」。こういう ことばを「かいぶん」というよ。「たけやぶ やけた」も かいぶんだよ！ほかの かいぶんも さがして みてね。"
+        },
+        {
+          cat: "🐝 いきもの ざつがく",
+          catClass: "c4",
+          illust: "🐝",
+          q: "ミツバチは、いい はなの ばしょを なかまに どうやって おしえるでしょう？",
+          sub: "ミツバチは はなの みつを あつめるよ。",
+          choices: [
+            { t: "ダンスを おどって おしえる", ok: true },
+            { t: "うたを うたって おしえる", ok: false },
+            { t: "てがみを かいて おしえる", ok: false },
+            { t: "でんわを かけて おしえる", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：はちは おどるのが とくいだよ。",
+          fact: "ミツバチは「8の字ダンス」を おどって、はなの ほうこうと きょりを なかまに おしえるよ。たいようの ばしょを めじるしに しているんだって！おどりで おはなしするなんて、すごいね！"
+        },
+        {
+          cat: "❓ なぞなぞ",
+          catClass: "c5",
+          illust: "💨",
+          q: "なぞなぞです。つかもうと しても つかめない。みえないけど、いつも そこに あるもの なーんだ？",
+          sub: "おとなも いっしょに かんがえて みてね。",
+          choices: [
+            { t: "くうき", ok: true },
+            { t: "つくえ", ok: false },
+            { t: "かべ", ok: false },
+            { t: "ほん", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：いきを すうときに、すっているよ。",
+          fact: "くうきは みえないけど、わたしたちの まわりに いつも あるよ。いきを すうと、からだの なかに くうきが はいって、げんきに うごけるんだ！みえないけど、とっても だいじな ものだね。"
+        }
+      ];
+    </script>
+    <script src="../assets/quiz.js?v=3"></script>
+  </body>
+</html>
