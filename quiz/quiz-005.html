@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <link rel="icon" href="data:," />
+    <title>だい5かい クイズ | 小学2年生の家庭学習教材</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@500;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/style.css" />
+  </head>
+  <body>
+    <div class="wrap">
+
+      <main id="view-quiz">
+        <div class="quiz-top">
+          <button class="back-btn" id="backHome" type="button">← もくじへ もどる</button>
+          <div class="progress-box">
+            <span class="qcount" id="qCount"></span>
+            <span class="stars" id="progressStars" aria-label="あつめた ほし"></span>
+          </div>
+        </div>
+
+        <section class="question-card" id="questionCard">
+          <span class="cat-chip" id="catChip"></span>
+          <div class="q-illust" id="qIllust" aria-hidden="true"></div>
+          <p class="q-text" id="qText"></p>
+          <p class="q-sub" id="qSub"></p>
+          <div class="choices" id="choices"></div>
+
+          <div class="feedback try" id="feedbackTry" hidden>
+            <p class="big">おしい！😮</p>
+            <p id="hintText"></p>
+          </div>
+
+          <div id="correctArea" hidden>
+            <div class="feedback good">
+              <p class="big" id="praiseText">ピンポーン！すごい！🎉</p>
+              <p>やったね！<ruby>正解<rt>せいかい</rt></ruby>だよ。</p>
+            </div>
+            <div class="fact-box">
+              <p class="fact-head">💡 へぇ〜！まめちしき</p>
+              <p id="factText"></p>
+            </div>
+            <button class="next-btn" id="nextBtn" type="button"></button>
+          </div>
+        </section>
+      </main>
+
+      <main id="view-result" hidden>
+        <section class="result-card" id="resultCard">
+          <div class="medal-wrap">
+            <svg width="150" height="170" viewBox="0 0 150 170" role="img" aria-label="メダルの イラスト">
+              <path d="M52 0 L75 52 L62 60 L38 8 Z" fill="#ff6b4a"/>
+              <path d="M98 0 L75 52 L88 60 L112 8 Z" fill="#3d9bff"/>
+              <circle id="medalCircle" cx="75" cy="105" r="52" fill="#f5a623"/>
+              <circle cx="75" cy="105" r="42" fill="none" stroke="#ffffff" stroke-width="4" stroke-dasharray="5 7" opacity="0.85"/>
+              <path d="M75 76 L84 96 L105 97 L89 110 L94 131 L75 119 L56 131 L61 110 L45 97 L66 96 Z" fill="#ffffff"/>
+            </svg>
+          </div>
+          <h2>クイズ クリア！🎉</h2>
+          <div class="result-stars" id="resultStars"></div>
+          <p class="result-msg" id="medalName"></p>
+          <p class="result-msg" id="resultMsg"></p>
+          <div class="result-btns">
+            <button class="again-btn" id="againBtn" type="button">🔁 もういちど あそぶ</button>
+            <button class="home-btn" id="resultHomeBtn" type="button">📚 もくじへ もどる</button>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      var QUIZ_DATA = [
+        {
+          cat: "🌰 こうえん さんすう",
+          catClass: "c1",
+          illust: "🌰",
+          q: "こうえんで どんぐりを 14こ ひろいました。ともだちに 5こ あげて、あとから じぶんでも 3こ ひろいました。いま どんぐりは なんこでしょう？",
+          sub: "あげた ぶんを ひいて、ひろった ぶんを たして みよう。",
+          choices: [
+            { t: "9こ", ok: false },
+            { t: "12こ", ok: true },
+            { t: "16こ", ok: false },
+            { t: "22こ", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：14から 5を ひいて、3を たして みよう。",
+          fact: "14 − 5 + 3 = 12。いま どんぐりは 12こ！どんぐりは あきに <ruby>木<rt>き</rt></ruby>から おちる <ruby>実<rt>み</rt></ruby>だよ。かたちや おおきさは <ruby>木<rt>き</rt></ruby>の しゅるいで ちがうんだ。ひろった どんぐりを ならべて かぞえるのも たのしいね！"
+        },
+        {
+          cat: "🧩 かずの パズル",
+          catClass: "c2",
+          illust: "🧩",
+          q: "かずが じゅんばんに ならんで います。5、10、15、20、つぎに くる かずは なん でしょう？",
+          sub: "かずは いくつずつ ふえているか、たしかめて みよう。",
+          choices: [
+            { t: "21", ok: false },
+            { t: "22", ok: false },
+            { t: "25", ok: true },
+            { t: "30", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：5から 10は 5 ふえているね。つぎも おなじだけ たして みよう。",
+          fact: "5、10、15、20と、5ずつ ふえているから、つぎは 25！かずの ならびの きまりを みつけると、さきの かずが わかるようになるよ。これが パズルの ひらめきだね！"
+        },
+        {
+          cat: "📚 かんじ クイズ",
+          catClass: "c3",
+          illust: "📚",
+          q: "「<ruby>木<rt>き</rt></ruby>」の よこに「<ruby>人<rt>ひと</rt></ruby>」が もたれかかると、なんという かんじに なるでしょう？",
+          sub: "ひとが きに もたれて やすんでいる すがたを おもいうかべて みよう。",
+          choices: [
+            { t: "<ruby>森<rt>もり</rt></ruby>", ok: false },
+            { t: "<ruby>林<rt>はやし</rt></ruby>", ok: false },
+            { t: "<ruby>休<rt>やす</rt></ruby>む", ok: true },
+            { t: "<ruby>体<rt>からだ</rt></ruby>", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：きの よこで ひとが やすむ、という いみの かんじだよ。",
+          fact: "「<ruby>木<rt>き</rt></ruby>」と「<ruby>人<rt>ひと</rt></ruby>」が あわさって「<ruby>休<rt>やす</rt></ruby>む」になるよ。ひとが きに もたれて やすむ すがたから できた かんじだと いわれているよ。かんじは パズルみたいで おもしろいね！"
+        },
+        {
+          cat: "🦉 いきもの ざつがく",
+          catClass: "c4",
+          illust: "🦉",
+          q: "フクロウは まわりを みるとき、くびを ぐるっと どれくらいまで まわせるでしょう？",
+          sub: "フクロウは よるに かつどうする とりだよ。",
+          choices: [
+            { t: "90ど くらい", ok: false },
+            { t: "180ど くらい", ok: false },
+            { t: "270ど くらい", ok: true },
+            { t: "10ど くらい", ok: false }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：うしろも みえるくらい、たくさん まわせるよ。",
+          fact: "フクロウは くびを 270ど くらいまで まわせるよ！フクロウの めは うごかせないので、くびを おおきく まわして まわりを みているんだ。よるでも よく みえる めで、えものを みつけるよ。へぇ〜！"
+        },
+        {
+          cat: "❓ なぞなぞ",
+          catClass: "c5",
+          illust: "🍳",
+          q: "なぞなぞです。パンは パンでも、たべられない パンは なーんだ？",
+          sub: "おとなも いっしょに かんがえて みてね。りょうりに つかう どうぐだよ。",
+          choices: [
+            { t: "<ruby>食<rt>しょく</rt></ruby>パン", ok: false },
+            { t: "あんパン", ok: false },
+            { t: "メロンパン", ok: false },
+            { t: "フライパン", ok: true }
+          ],
+          hint: "もういちど かんがえて みよう。ヒント：たまごやきを やくときに つかうよ。",
+          fact: "こたえは フライパン！「パン」という なまえが ついているけど、たべものでは なくて、りょうりに つかう どうぐだよ。えいごの「pan（なべ）」が もとに なっているんだって！"
+        }
+      ];
+    </script>
+    <script src="../assets/quiz.js?v=3"></script>
+  </body>
+</html>
